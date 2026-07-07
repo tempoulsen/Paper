@@ -20,3 +20,9 @@
 /tmp/
 /output/
 /outputs/
+
+# External working copies used as sources for the paper draft
+/_sources/
+
+# Local LaTeX build copy. The submitted draft PDF is kept under manuscript/output.
+/manuscript/main.pdf
