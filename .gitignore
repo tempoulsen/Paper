@@ -1,0 +1,22 @@
+.DS_Store
+
+# Local reference material from Jesper. Keep private email and publisher PDFs out of GitHub.
+/Fra Jesper/
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+
+# Local scratch output
+/tmp/
+/output/
+/outputs/
