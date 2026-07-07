@@ -6,13 +6,13 @@ The immediate target journal is the Journal of Empirical Finance. The paper shou
 
 ## Source Material Read
 
-Local reference files from Jesper are stored in `Fra Jesper/`.
+Reference files from Jesper are stored in `source_materials/jesper/`.
 
 - `Jesper Mail.pdf`
 - `Guide for authors - Journal of Empirical Finance - ISSN 0927-5398 | ScienceDirect.com by Elsevier.pdf`
 - `Paper-eksempel.pdf`
 
-These files are local reference material. They should stay out of GitHub because they include a private email and copyrighted publisher material.
+These files document the submission guidance, journal requirements, and example article used when shaping the manuscript.
 
 ## Core Paper Claim
 
