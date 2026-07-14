@@ -1,7 +1,13 @@
 .DS_Store
 
-# Local reference material from Jesper. Keep private email and publisher PDFs out of GitHub.
-/Fra Jesper/
+# Private editorial and research material
+/source_materials/
+/_sources/
+
+# Local scratch directories
+/tmp/
+/output/
+/outputs/
 
 # LaTeX build artifacts
 *.aux
@@ -15,14 +21,7 @@
 *.run.xml
 *.synctex.gz
 *.toc
+*.spl
 
-# Local scratch output
-/tmp/
-/output/
-/outputs/
-
-# External working copies used as sources for the paper draft
-/_sources/
-
-# Local LaTeX build copy. The submitted draft PDF is kept under manuscript/output.
-/manuscript/main.pdf
+# PDFs built beside their LaTeX sources
+/manuscript/*.pdf

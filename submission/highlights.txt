@@ -1,0 +1,4 @@
+• Local high-low scaling explains most chart-CNN return predictability.
+• A 1D temporal CNN nearly matches a 2D chart CNN on locally scaled data.
+• Multimodal fusion adds little beyond the stronger single representation.
+• Predictability weakens after costs, liquidity screens, and after 2020.

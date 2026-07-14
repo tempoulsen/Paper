@@ -1,0 +1,415 @@
+\section{Implementation and reporting conventions}\label{app:implementation}
+
+This supplement records the implementation details and result grids that support the article. Every numerical cell is a direct transcription or a compact rearrangement of the finalized analysis underlying the article.
+
+\subsection{Sample, timing, and portfolio design}
+
+Table~\ref{tab:app_design_summary} collects the choices that apply across the learned models. The chart CNN, CNN1D, and multimodal models use the same CRSP source panel, target definition, sample split, and downstream portfolio rules. A method enters a formation-date cross section when its required input history and subsequent holding-period return are available.
+
+\begin{table}[htbp]
+\centering
+\caption{Empirical design summary}
+\label{tab:app_design_summary}
+\small
+\begin{tabularx}{\textwidth}{@{}p{0.25\textwidth}L@{}}
+\toprule
+Component & Convention \\
+\midrule
+Source universe & CRSP ordinary common shares with share codes 10 and 11 on NYSE, AMEX, or Nasdaq. Prices must be positive, and lagged market capitalization must be observed for value-weighted portfolios. \\
+Development sample & 1993--2000. Stock-date observations are randomly divided into 70\% training and 30\% validation sets using a fixed seed. \\
+Evaluation samples & Full period 2001--2024, baseline period 2001--2019, and extension period 2020--2024. \\
+Input and target grid & Input length $I\in\{5,20,60\}$ trading days and future return horizon $R\in\{5,20,60\}$ trading days. The target equals one when the cumulative return over dates $t+1$ through $t+R$ is positive. \\
+Portfolio frequency & Non-overlapping weekly, monthly, and quarterly formation dates for $R=5$, 20, and 60. \\
+Portfolio rule & Buy the highest-score decile and short the lowest-score decile. Each leg has one dollar of notional. Results use equal- or lagged-market-capitalization weights within each leg. \\
+Annualization & Mean returns use factors 52, 12, and 4. Standard deviations use the square roots of the same factors. The Sharpe ratio is annualized mean divided by annualized standard deviation. \\
+Transaction costs & A one-way rate of 10 basis points applies above the contemporaneous NYSE 80th-percentile market-capitalization breakpoint and 20 basis points otherwise. The deduction uses full absolute traded notional in both legs. \\
+Turnover & Conventional half-turnover is computed separately for the long and short legs, summed, and expressed as a monthly equivalent. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Representations and network architectures}
+
+The chart input contains binary open-high-low-close bars, a moving-average line with length $I$, and a separate volume panel. Prices and the moving average are jointly min--max scaled within the stock-window, and volume is scaled separately. The image-scaled sequence retains the six continuous open, high, low, close, moving-average, and volume channels after the corresponding within-window scaling. CNN1D applies convolution along the ordered trading-day dimension.
+
+\begin{table}[htbp]
+\centering
+\caption{Architecture by input length}
+\label{tab:app_architecture}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}cclcl@{}}
+\toprule
+$I$ & Chart input & Chart CNN blocks and channels & Sequence input & CNN1D blocks and channels \\
+\midrule
+5  & $32\times15$  & 2 blocks, 64 and 128 & $6\times5$  & 1 block, 64 \\
+20 & $64\times60$  & 3 blocks, 64, 128, and 256 & $6\times20$ & 2 blocks, 64 and 128 \\
+60 & $96\times180$ & 4 blocks, 64, 128, 256, and 512 & $6\times60$ & 3 blocks, 64, 128, and 256 \\
+\bottomrule
+\end{tabular}
+\begin{minipage}{\textwidth}
+\footnotesize\textit{Note.} Every chart block applies a $5\times3$ convolution, batch normalization, Leaky ReLU activation, and max pooling. Every sequence block applies the corresponding operations with a one-dimensional filter of length three, stride one, and padding one. The final feature map is flattened, dropout is applied, and a fully connected layer produces two return-sign logits. The multimodal model pairs the chart and sequence branches for the same $(i,t,I,R)$ observation. Its primary fusion head concatenates the two branch feature vectors and applies a linear classifier.
+\end{minipage}
+\end{table}
+
+The scaling exercise also estimates a logistic classifier on the image-scaled, cumulative-return-scaled, and devolatized-return-scaled sequences. Scheme-specific sequence channels are standardized with moments estimated in the development sample and then held fixed during evaluation.
+
+\begin{table}[htbp]
+\centering
+\caption{Estimation settings for learned models}
+\label{tab:app_training}
+\small
+\begin{tabularx}{0.86\textwidth}{@{}lL@{}}
+\toprule
+Setting & Value \\
+\midrule
+Objective & Two-class cross-entropy loss \\
+Optimizer & Adam \\
+Learning rate & $10^{-4}$ \\
+Batch size & 128 observations \\
+Maximum epochs & 50 \\
+Checkpoint rule & Lowest validation loss \\
+Early stopping & Two consecutive epochs without validation-loss improvement \\
+Dropout probability & 0.50 after the flattened feature representation \\
+Initialization & Xavier initialization for convolutional and fully connected weights \\
+Portfolio score & Softmax probability assigned to the positive-return class \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Checkpoint and ensemble conventions}\label{app:run_conventions}
+
+The main empirical analysis uses one selected checkpoint for every learned specification. The chart-CNN seed sensitivity exercise separately compares one- and five-member forecast averages for the two short-input weekly specifications. Table~\ref{tab:app_run_conventions} keeps the main results and this sensitivity check distinct.
+
+\begin{table}[htbp]
+\centering
+\caption{Run convention by result family}
+\label{tab:app_run_conventions}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.24\textwidth}>{\raggedright\arraybackslash}p{0.23\textwidth}L@{}}
+\toprule
+Result family & Forecast aggregation & Scope \\
+\midrule
+Weekly mechanism grid & One selected checkpoint & All chart CNN, CNN1D, and multimodal $I5/R5$, $I20/R5$, and $I60/R5$ cells \\
+Chart grid & One selected checkpoint & All nine $(I,R)$ cells \\
+CNN1D grid & One selected checkpoint & All nine $(I,R)$ cells \\
+Multimodal grid & One selected checkpoint & All nine feature-concatenation cells \\
+Seed sensitivity & Matched $M=1$ and $M=5$ results & Chart CNN $I5/R5$ and $I20/R5$ \\
+Late fusion & Prediction-level combination & Pretrained chart and CNN1D probabilities or logits are averaged after branch prediction \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\FloatBarrier
+
+\section{Complete representation decomposition}\label{app:scaling_grid}
+
+Table~\ref{tab:app_scaling_grid} reports the full scaling exercise from the canonical analysis. It extends the article's weekly main grid to monthly and quarterly return horizons while preserving both portfolio weighting rules.
+
+\begin{table}[htbp]
+\centering
+\caption{Gross Sharpe ratios across sequence scaling schemes}
+\label{tab:app_scaling_grid}
+\scriptsize
+\setlength{\tabcolsep}{4.7pt}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+& \multicolumn{2}{c}{5-day input} & \multicolumn{2}{c}{20-day input} & \multicolumn{2}{c}{60-day input} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(l){6-7}
+Model & EW & VW & EW & VW & EW & VW \\
+\midrule
+\multicolumn{7}{@{}l}{\textit{Panel A. 5-day return horizon}} \\
+Chart CNN & 5.88 & 1.39 & 6.52 & 1.44 & 3.72 & 1.18 \\
+Logistic, local image scale & 4.88 & 1.25 & 5.22 & 1.09 & 5.44 & 1.12 \\
+Logistic, cumulative scale & 0.18 & $-0.04$ & $-0.41$ & $-0.51$ & $-0.26$ & $-0.53$ \\
+Logistic, devolatized scale & 2.80 & 0.79 & 2.73 & 0.48 & 2.70 & 0.66 \\
+CNN1D, local image scale & 6.24 & 1.16 & 6.55 & 1.12 & 5.89 & 2.06 \\
+CNN1D, cumulative scale & 4.88 & 1.47 & 5.12 & 1.41 & 4.66 & 1.15 \\
+CNN1D, devolatized scale & 4.39 & 0.73 & 5.26 & 1.04 & 4.82 & 1.28 \\
+\addlinespace[3pt]
+\multicolumn{7}{@{}l}{\textit{Panel B. 20-day return horizon}} \\
+Chart CNN & 1.35 & 0.10 & 2.26 & 0.49 & 0.57 & $-0.29$ \\
+Logistic, local image scale & 2.03 & 0.56 & 2.37 & 0.41 & 1.59 & 0.60 \\
+Logistic, cumulative scale & 0.02 & 0.37 & $-0.29$ & $-0.08$ & $-0.30$ & $-0.64$ \\
+Logistic, devolatized scale & 1.27 & 0.59 & 1.02 & 0.28 & 0.98 & 0.12 \\
+CNN1D, local image scale & 2.18 & 0.41 & 2.15 & 0.41 & 1.74 & 0.51 \\
+CNN1D, cumulative scale & 0.94 & 0.92 & 0.97 & 0.56 & 1.45 & 0.63 \\
+CNN1D, devolatized scale & 1.17 & 0.16 & 1.73 & 0.53 & 1.22 & 0.30 \\
+\addlinespace[3pt]
+\multicolumn{7}{@{}l}{\textit{Panel C. 60-day return horizon}} \\
+Chart CNN & 0.23 & $-0.18$ & 0.34 & 0.21 & 0.55 & 0.45 \\
+Logistic, local image scale & 0.97 & 0.04 & 0.94 & 0.21 & 0.55 & 0.21 \\
+Logistic, cumulative scale & 0.37 & 0.11 & $-0.02$ & $-0.06$ & $-0.30$ & $-0.54$ \\
+Logistic, devolatized scale & 0.66 & 0.08 & 0.61 & 0.37 & 0.40 & 0.17 \\
+CNN1D, local image scale & 0.99 & 0.28 & 0.46 & 0.15 & 0.46 & 0.25 \\
+CNN1D, cumulative scale & 0.26 & 0.33 & 0.13 & 0.16 & 0.34 & 0.21 \\
+CNN1D, devolatized scale & 0.83 & 0.13 & 0.65 & 0.34 & 0.45 & 0.21 \\
+\bottomrule
+\end{tabular}
+\begin{minipage}{\textwidth}
+\footnotesize\textit{Note.} Entries are annualized gross Sharpe ratios of high-minus-low decile portfolios over 2001--2024. EW and VW denote equal- and value-weighted legs. Local image scale applies the chart's within-window high--low normalization to the continuous sequence. Cumulative scale anchors the path to the first close, and devolatized scale expresses changes relative to lagged volatility.
+\end{minipage}
+\end{table}
+
+\FloatBarrier
+
+\section{Complete learned-model grids}\label{app:learned_grids}
+
+Tables~\ref{tab:app_chart_grid}--\ref{tab:app_mmd_grid} condense the baseline and extension results into complete $3\times3$ grids. Gross SR and Net SR denote annualized Sharpe ratios before and after the common transaction-cost deduction. This layout keeps horizon, sample period, and weighting visible without repeating the return and standard-deviation columns already summarized in the article's focused economic tests.
+
+\begin{table}[htbp]
+\centering
+\caption{Chart CNN Sharpe-ratio grid}
+\label{tab:app_chart_grid}
+\scriptsize
+\setlength{\tabcolsep}{4.2pt}
+\begin{tabular}{@{}lrrrrrrrr@{}}
+\toprule
+& \multicolumn{4}{c}{Equal-weighted} & \multicolumn{4}{c}{Value-weighted} \\
+\cmidrule(lr){2-5}\cmidrule(l){6-9}
+& \multicolumn{2}{c}{2001--2019} & \multicolumn{2}{c}{2020--2024}
+& \multicolumn{2}{c}{2001--2019} & \multicolumn{2}{c}{2020--2024} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(l){8-9}
+Spec. & Gross SR & Net SR & Gross SR & Net SR & Gross SR & Net SR & Gross SR & Net SR \\
+\midrule
+$I5/R5$       & 7.00 & 4.28 & 3.30 & 1.01 & 1.77 & 0.00 & 0.57 & $-0.47$ \\
+$I5/R20$      & 1.98 & 1.05 & 0.21 & $-0.37$ & 0.26 & $-0.23$ & $-0.16$ & $-0.41$ \\
+$I5/R60$      & 0.14 & $-0.10$ & 0.56 & 0.28 & $-0.15$ & $-0.28$ & 0.14 & $-0.03$ \\
+$I20/R5$      & 7.64 & 4.78 & 3.87 & 1.35 & 1.71 & $-0.01$ & 0.70 & $-0.62$ \\
+$I20/R20$     & 2.53 & 1.51 & 1.76 & 1.30 & 0.26 & $-0.31$ & 0.67 & 0.54 \\
+$I20/R60$     & 0.35 & 0.16 & 0.02 & $-0.15$ & 0.25 & 0.08 & 0.12 & $-0.01$ \\
+$I60/R5$      & 5.32 & 2.26 & 1.18 & $-0.61$ & 1.27 & $-0.68$ & 1.13 & $-0.45$ \\
+$I60/R20$     & 1.28 & 0.31 & $-0.51$ & $-0.98$ & $-0.41$ & $-0.97$ & $-0.22$ & $-0.51$ \\
+$I60/R60$     & 0.25 & 0.07 & 0.46 & 0.36 & 0.05 & $-0.01$ & 0.74 & 0.53 \\
+\bottomrule
+\end{tabular}
+\begin{minipage}{\textwidth}
+\footnotesize\textit{Note.} Each cell reports one selected chart-CNN specification from the canonical analysis. Returns are formed at the frequency associated with $R$ and are annualized using 52, 12, or 4 observations per year.
+\end{minipage}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{CNN1D Sharpe-ratio grid}
+\label{tab:app_cnn1d_grid}
+\scriptsize
+\setlength{\tabcolsep}{4.2pt}
+\begin{tabular}{@{}lrrrrrrrr@{}}
+\toprule
+& \multicolumn{4}{c}{Equal-weighted} & \multicolumn{4}{c}{Value-weighted} \\
+\cmidrule(lr){2-5}\cmidrule(l){6-9}
+& \multicolumn{2}{c}{2001--2019} & \multicolumn{2}{c}{2020--2024}
+& \multicolumn{2}{c}{2001--2019} & \multicolumn{2}{c}{2020--2024} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(l){8-9}
+Spec. & Gross SR & Net SR & Gross SR & Net SR & Gross SR & Net SR & Gross SR & Net SR \\
+\midrule
+$I5/R5$   & 7.45 & 4.50 & 3.47 & 1.02 & 1.37 & $-0.21$ & 0.54 & $-0.49$ \\
+$I5/R20$  & 2.78 & 1.78 & 1.26 & 0.67 & 0.46 & 0.00 & 0.52 & 0.19 \\
+$I5/R60$  & 1.08 & 0.83 & 0.73 & 0.51 & 0.44 & 0.28 & $-0.07$ & $-0.17$ \\
+$I20/R5$  & 8.09 & 5.28 & 3.34 & 1.18 & 1.49 & $-0.35$ & 0.28 & $-0.77$ \\
+$I20/R20$ & 2.63 & 1.92 & 1.30 & 0.85 & 0.38 & $-0.02$ & 0.70 & 0.25 \\
+$I20/R60$ & 0.49 & 0.32 & 0.37 & 0.24 & 0.32 & 0.19 & $-0.31$ & $-0.45$ \\
+$I60/R5$  & 7.88 & 5.58 & 2.29 & 0.78 & 2.61 & 0.80 & 0.92 & $-0.29$ \\
+$I60/R20$ & 2.07 & 1.59 & 1.21 & 0.92 & 0.60 & 0.26 & 0.29 & $-0.02$ \\
+$I60/R60$ & 0.49 & 0.37 & 0.44 & 0.32 & 0.36 & 0.23 & 0.06 & $-0.03$ \\
+\bottomrule
+\end{tabular}
+\begin{minipage}{\textwidth}
+\footnotesize\textit{Note.} Every cell uses one selected checkpoint of the image-scaled CNN1D model. Gross and net Sharpe ratios follow the portfolio and transaction-cost conventions in Table~\ref{tab:app_design_summary}.
+\end{minipage}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Multimodal Sharpe-ratio grid}
+\label{tab:app_mmd_grid}
+\scriptsize
+\setlength{\tabcolsep}{4.2pt}
+\begin{tabular}{@{}lrrrrrrrr@{}}
+\toprule
+& \multicolumn{4}{c}{Equal-weighted} & \multicolumn{4}{c}{Value-weighted} \\
+\cmidrule(lr){2-5}\cmidrule(l){6-9}
+& \multicolumn{2}{c}{2001--2019} & \multicolumn{2}{c}{2020--2024}
+& \multicolumn{2}{c}{2001--2019} & \multicolumn{2}{c}{2020--2024} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(l){8-9}
+Spec. & Gross SR & Net SR & Gross SR & Net SR & Gross SR & Net SR & Gross SR & Net SR \\
+\midrule
+$I5/R5$   & 7.23 & 4.41 & 3.26 & 0.97 & 1.53 & $-0.15$ & 0.25 & $-0.86$ \\
+$I5/R20$  & 1.81 & 0.83 & 0.31 & $-0.24$ & 0.11 & $-0.36$ & 0.39 & 0.07 \\
+$I5/R60$  & 0.74 & 0.46 & 0.27 & $-0.04$ & 0.08 & $-0.07$ & $-0.25$ & $-0.39$ \\
+$I20/R5$  & 7.76 & 5.12 & 3.19 & 1.11 & 1.74 & $-0.01$ & 0.90 & $-0.35$ \\
+$I20/R20$ & 2.51 & 1.68 & 1.56 & 1.04 & 0.41 & $-0.02$ & 0.02 & $-0.38$ \\
+$I20/R60$ & 0.60 & 0.40 & 0.38 & 0.25 & 0.05 & $-0.12$ & 0.19 & 0.08 \\
+$I60/R5$  & 7.58 & 5.31 & 1.91 & 0.44 & 2.23 & 0.44 & 0.64 & $-0.75$ \\
+$I60/R20$ & 1.89 & 1.31 & $-0.14$ & $-0.40$ & 0.75 & 0.35 & 0.02 & $-0.35$ \\
+$I60/R60$ & 0.75 & 0.57 & 0.53 & 0.43 & 0.43 & 0.29 & 0.64 & 0.50 \\
+\bottomrule
+\end{tabular}
+\begin{minipage}{\textwidth}
+\footnotesize\textit{Note.} Every cell uses one selected feature-concatenation checkpoint. Each observation pairs chart and sequence inputs for the same stock, formation date, input length, and forecast horizon.
+\end{minipage}
+\end{table}
+
+\FloatBarrier
+
+\section{Rank stability across input windows}\label{app:rank_stability}
+
+Table~\ref{tab:app_rank_stability} reports the underlying correlations in a compact tabular form. Each row holds the model family and return horizon fixed and compares the cross-sectional score rankings produced by two input lengths.
+
+\begin{table}[htbp]
+\centering
+\caption{Within-model Spearman rank correlations across input windows}
+\label{tab:app_rank_stability}
+\small
+\setlength{\tabcolsep}{9pt}
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+Model & Return horizon & $I5/I20$ & $I5/I60$ & $I20/I60$ \\
+\midrule
+Chart CNN & $R5$  & 0.60 & 0.22 & 0.34 \\
+Chart CNN & $R20$ & 0.28 & 0.07 & 0.09 \\
+Chart CNN & $R60$ & 0.18 & 0.09 & 0.33 \\
+\addlinespace[2pt]
+CNN1D & $R5$  & 0.64 & 0.54 & 0.71 \\
+CNN1D & $R20$ & 0.52 & 0.38 & 0.62 \\
+CNN1D & $R60$ & 0.30 & 0.21 & 0.45 \\
+\addlinespace[2pt]
+Multimodal & $R5$  & 0.56 & 0.44 & 0.59 \\
+Multimodal & $R20$ & 0.23 & 0.19 & 0.37 \\
+Multimodal & $R60$ & 0.21 & 0.11 & 0.32 \\
+\bottomrule
+\end{tabular}
+\begin{minipage}{\textwidth}
+\footnotesize\textit{Note.} Entries are time-series averages of formation-date Spearman correlations between two input-window scores from the same learned-model family over 2001--2024. The correlations are computed on the common stock-date panel used in the canonical overlap analysis.
+\end{minipage}
+\end{table}
+
+\FloatBarrier
+
+\section{Seed and fusion sensitivity}\label{app:sensitivity}
+
+The chart seed comparison is available for the two short-input weekly specifications. Table~\ref{tab:app_ensemble_comparison} shows that the matched one- and five-member results are close in these cells. Table~\ref{tab:app_late_fusion} compares probability and logit averaging using the same aligned branch predictions.
+
+\begin{table}[htbp]
+\centering
+\caption{Matched one- and five-member chart CNN results}
+\label{tab:app_ensemble_comparison}
+\scriptsize
+\setlength{\tabcolsep}{4.3pt}
+\begin{tabular}{@{}llrrrrrr@{}}
+\toprule
+Spec. & Weight & Gross SR, $M=1$ & Gross SR, $M=5$ & Net return, $M=1$ & Net return, $M=5$ & Net SR, $M=1$ & Net SR, $M=5$ \\
+\midrule
+$I5/R5$  & EW & 5.88 & 5.99 & 48.8\% & 49.9\% & 3.44 & 3.54 \\
+$I5/R5$  & VW & 1.39 & 1.44 & $-2.1$\% & $-1.2$\% & $-0.13$ & $-0.07$ \\
+$I20/R5$ & EW & 6.52 & 6.58 & 51.3\% & 55.3\% & 3.94 & 4.10 \\
+$I20/R5$ & VW & 1.44 & 1.40 & $-2.5$\% & $-2.2$\% & $-0.16$ & $-0.13$ \\
+\bottomrule
+\end{tabular}
+\begin{minipage}{\textwidth}
+\footnotesize\textit{Note.} The table reports full-sample 2001--2024 portfolios under matched construction rules. $M$ is the number of independently trained chart forecasts averaged before the cross-sectional sort.
+\end{minipage}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Late-fusion sensitivity to probability and logit averaging}
+\label{tab:app_late_fusion}
+\scriptsize
+\setlength{\tabcolsep}{4.2pt}
+\begin{tabular}{@{}llrrrrrr@{}}
+\toprule
+Spec. & Fusion rule & EW full & EW baseline & EW extension & VW full & VW baseline & VW extension \\
+\midrule
+$I5/R5$  & Probability average & 6.25 & 7.26 & 3.47 & 1.21 & 1.41 & 0.55 \\
+$I5/R5$  & Logit average       & 6.25 & 7.25 & 3.47 & 1.20 & 1.40 & 0.55 \\
+$I20/R5$ & Probability average & 6.51 & 7.70 & 3.40 & 1.60 & 1.89 & 0.82 \\
+$I20/R5$ & Logit average       & 6.51 & 7.69 & 3.39 & 1.59 & 1.86 & 0.84 \\
+\bottomrule
+\end{tabular}
+\begin{minipage}{\textwidth}
+\footnotesize\textit{Note.} Entries are annualized gross Sharpe ratios. Baseline and extension denote 2001--2019 and 2020--2024. Late fusion combines the aligned predictions of pretrained chart and sequence branches.
+\end{minipage}
+\end{table}
+
+\FloatBarrier
+
+\section{Price-based benchmark grids}\label{app:benchmark_grids}
+
+The benchmark tables use the same portfolio frequencies, weighting rules, annualization, and transaction-cost schedule as the learned portfolios. CONT is the implemented medium-horizon continuation signal. It compounds returns over trading-day lags 22 through 273, so its name records the implemented 252-day window without imposing the conventional 12-minus-1 label. STR and WSTR are one-month and one-week reversal signals. TREND is the supervised rolling linear forecast built from moving-average-to-price ratios.
+
+\begin{table}[htbp]
+\centering
+\caption{Equal-weighted price-based benchmark Sharpe ratios}
+\label{tab:app_benchmark_ew}
+\scriptsize
+\setlength{\tabcolsep}{4.6pt}
+\begin{tabular}{@{}llrrrrrr@{}}
+\toprule
+& & \multicolumn{2}{c}{2001--2019} & \multicolumn{2}{c}{2020--2024} & \multicolumn{2}{c}{2001--2024} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(l){7-8}
+Frequency & Signal & Gross SR & Net SR & Gross SR & Net SR & Gross SR & Net SR \\
+\midrule
+Week & CONT  & $-0.19$ & $-0.36$ & 0.26 & 0.12 & $-0.08$ & $-0.25$ \\
+Week & STR   & 2.04 & 1.33 & 1.10 & 0.44 & 1.83 & 1.13 \\
+Week & WSTR  & 3.33 & 1.59 & 1.42 & $-0.03$ & 2.86 & 1.20 \\
+Week & TREND & 3.09 & 1.85 & 0.38 & $-0.62$ & 2.49 & 1.31 \\
+\addlinespace[2pt]
+Month & CONT  & $-0.01$ & $-0.09$ & 0.34 & 0.27 & 0.06 & $-0.01$ \\
+Month & STR   & 0.71 & 0.32 & 0.24 & $-0.07$ & 0.59 & 0.22 \\
+Month & WSTR  & 1.43 & 0.87 & 0.47 & 0.13 & 1.12 & 0.63 \\
+Month & TREND & 0.70 & 0.37 & 0.60 & 0.30 & 0.68 & 0.35 \\
+\addlinespace[2pt]
+Quarter & CONT  & $-0.13$ & $-0.16$ & 0.38 & 0.35 & $-0.04$ & $-0.07$ \\
+Quarter & STR   & 0.34 & 0.22 & 0.09 & $-0.00$ & 0.28 & 0.17 \\
+Quarter & WSTR  & 0.37 & 0.18 & 0.56 & 0.30 & 0.39 & 0.19 \\
+Quarter & TREND & $-0.05$ & $-0.11$ & 0.54 & 0.43 & 0.01 & $-0.06$ \\
+\bottomrule
+\end{tabular}
+\begin{minipage}{\textwidth}
+\footnotesize\textit{Note.} Gross and net Sharpe ratios are annualized. Net returns apply the common transaction-cost schedule to full absolute traded notional.
+\end{minipage}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Value-weighted price-based benchmark Sharpe ratios}
+\label{tab:app_benchmark_vw}
+\scriptsize
+\setlength{\tabcolsep}{4.6pt}
+\begin{tabular}{@{}llrrrrrr@{}}
+\toprule
+& & \multicolumn{2}{c}{2001--2019} & \multicolumn{2}{c}{2020--2024} & \multicolumn{2}{c}{2001--2024} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(l){7-8}
+Frequency & Signal & Gross SR & Net SR & Gross SR & Net SR & Gross SR & Net SR \\
+\midrule
+Week & CONT  & 0.12 & $-0.05$ & 0.53 & 0.38 & 0.21 & 0.05 \\
+Week & STR   & 0.59 & 0.01 & $-0.51$ & $-1.01$ & 0.34 & $-0.23$ \\
+Week & WSTR  & 0.82 & $-0.27$ & $-0.59$ & $-1.41$ & 0.47 & $-0.55$ \\
+Week & TREND & 0.72 & $-0.09$ & $-0.21$ & $-0.77$ & 0.52 & $-0.24$ \\
+\addlinespace[2pt]
+Month & CONT  & 0.18 & 0.11 & 0.26 & 0.21 & 0.20 & 0.13 \\
+Month & STR   & 0.24 & $-0.05$ & $-0.31$ & $-0.49$ & 0.09 & $-0.17$ \\
+Month & WSTR  & 0.32 & $-0.01$ & $-0.25$ & $-0.46$ & 0.16 & $-0.13$ \\
+Month & TREND & $-0.11$ & $-0.33$ & 0.39 & 0.24 & 0.02 & $-0.19$ \\
+\addlinespace[2pt]
+Quarter & CONT  & 0.07 & 0.03 & 0.52 & 0.48 & 0.16 & 0.12 \\
+Quarter & STR   & 0.20 & 0.10 & 0.04 & $-0.02$ & 0.15 & 0.07 \\
+Quarter & WSTR  & $-0.02$ & $-0.16$ & $-0.07$ & $-0.14$ & $-0.04$ & $-0.15$ \\
+Quarter & TREND & $-0.03$ & $-0.08$ & 1.21 & 1.13 & 0.13 & 0.07 \\
+\bottomrule
+\end{tabular}
+\begin{minipage}{\textwidth}
+\footnotesize\textit{Note.} Gross and net Sharpe ratios are annualized. Value weights use lagged market capitalization and are normalized separately within the long and short legs.
+\end{minipage}
+\end{table}
+
+\FloatBarrier
+
+\section{Decile profiles}\label{app:decile_profiles}
+
+The complete decile profiles show whether the high-minus-low result is supported by a broader cross-sectional ordering. The six panels report annualized gross decile returns for each model, input length, forecast horizon, and weighting rule over 2001--2024. They reproduce the return panels from the finalized simple-table exhibits and use no graphical interpolation. The full-grid Sharpe ratios appear in Tables~\ref{tab:app_chart_grid}--\ref{tab:app_mmd_grid}.
+
+\input{online_appendix_deciles}
+
+\FloatBarrier

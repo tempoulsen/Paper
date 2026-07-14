@@ -1,7 +1,0 @@
-Highlights
-
-- Local high-low scaling carries much of the chart-CNN return signal.
-- A sequence CNN recovers most chart-CNN performance without image layout.
-- Multimodal fusion adds limited gains over the stronger single branch.
-- Learned-model gains concentrate in equal-weighted weekly portfolios.
-- Costs, liquidity filters, and newer data sharply narrow performance.

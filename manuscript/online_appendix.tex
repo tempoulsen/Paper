@@ -1,0 +1,64 @@
+\documentclass[final,1p,times,nonatbib]{elsarticle}
+
+\newif\ifanonymous
+\ifdefined\anonymousversion
+  \anonymoustrue
+\else
+  \anonymousfalse
+\fi
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{pdflscape}
+\usepackage{placeins}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\definecolor{linkblue}{RGB}{0,86,145}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=linkblue,
+  urlcolor=linkblue,
+  pdftitle={Online Appendix to Local Scaling and Temporal Learning in Chart-Based Return Prediction}
+}
+\ifanonymous
+  \hypersetup{pdfauthor={}}
+\else
+  \hypersetup{pdfauthor={Tobias Edward Mailandt-Poulsen and Oscar Stub Selmer}}
+\fi
+
+\newcolumntype{Y}{>{\centering\arraybackslash}X}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\renewcommand{\topfraction}{0.90}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.85}
+
+\journal{Journal of Empirical Finance}
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{Online Appendix to ``Local Scaling and Temporal Learning in Chart-Based Return Prediction''}
+
+\ifanonymous
+\else
+\author[au]{Tobias Edward Mailandt-Poulsen}
+\author[au]{Oscar Stub Selmer\corref{cor1}}
+\cortext[cor1]{Corresponding author}
+\address[au]{Department of Economics and Business Economics, Aarhus University, Fuglesangs All\'e 4, 8210 Aarhus V, Denmark}
+\fi
+
+\end{frontmatter}
+
+\appendix
+\input{online_appendix_body}
+
+\end{document}
