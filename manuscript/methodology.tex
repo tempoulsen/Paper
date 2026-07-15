@@ -17,7 +17,7 @@ The return on date $t$ is excluded from the target. Every input uses information
 
 Raw nominal prices can jump mechanically after splits. We therefore reconstruct a price-consistent close path from daily returns within each lookback window and scale open, high, and low prices relative to that path. The moving-average channel uses a window equal to $I$. These reconstructed open, high, low, close, moving-average, and volume histories form the common economic input to the chart and sequence models.
 
-History requirements differ across methods. Learned inputs require 5--60 days, the continuation benchmark reaches 273 trading days into the past, and the longest moving-average feature reaches 1,000 days. Standalone portfolios draw from the common CRSP source universe and use common downstream rules, while signal-specific histories can produce different eligible cross-sections. The learned-model overlap tests impose an exact common stock-date panel. We preserve this distinction throughout the paper because portfolio performance and signal overlap answer different questions.
+History requirements differ across methods. Learned inputs require 5--60 days, the MOM benchmark reaches 273 trading days into the past, and the longest moving-average feature reaches 1,000 days. Standalone portfolios draw from the common CRSP source universe and use common downstream rules, while signal-specific histories can produce different eligible cross-sections. The learned-model overlap tests impose an exact common stock-date panel. We preserve this distinction throughout the paper because portfolio performance and signal overlap answer different questions.
 
 \subsection{From market histories to charts}\label{subsec:representation_design}
 
@@ -37,7 +37,7 @@ The numerical sequence contains the same six channels in chronological order. We
 
 We first remove mechanical discontinuities in the nominal price record. The first close in each lookback window is anchored to one, subsequent closes are reconstructed from returns, and open, high, and low prices are expressed consistently with that reconstructed path. We then apply the representation-specific normalization. For the chart and image-scaled sequence, the minimum and maximum are computed jointly across the five price channels within the stock-window, while volume is scaled against its own within-window range. Each stock receives a new scale at every formation date using only its own recent history.
 
-The two representations diverge after this common normalization. The sequence model retains the scaled open, high, low, close, moving-average, and volume observations as continuous, chronologically ordered channels. The chart maps the scaled price variables to a fixed-height price panel, reserves a separate lower panel for volume, and renders the result as a binary pixel matrix. The chart consequently discards within-pixel numerical precision while preserving the relative location and shape of the recent path. This ordering isolates the economic role of local scaling more closely than a comparison between raw numerical inputs and chart images. A strong image-scaled sequence model shows that the common local coordinate system carries predictive information even when binary rendering and two-dimensional layout are removed.
+The two representations diverge after this common normalization. The sequence model retains the scaled open, high, low, close, moving-average, and volume observations as continuous, chronologically ordered channels. The chart maps the scaled price variables to a fixed-height price panel, reserves a separate lower panel for volume, and renders the result as a binary pixel matrix. The chart consequently discards within-pixel numerical precision while preserving the relative location and shape of the recent path. This ordering isolates the economic role of local scaling more closely than a comparison between raw numerical inputs and chart images. A strong image-scaled sequence model shows that chart-style normalization carries predictive information even when binary rendering and two-dimensional layout are removed.
 
 Table~\ref{tab:design_map} shows how the models turn these encodings into a decomposition. The logistic comparisons measure how much cross-sectional ranking is already present in each encoding. CNN1D adds nonlinear temporal feature extraction to the same numerical sequence. The chart CNN combines local scaling, binary rendering, and two-dimensional convolution. The multimodal model supplies both encodings to paired branches.
 
@@ -63,7 +63,7 @@ Multimodal & Local min--max & Continuous sequence and binary chart & Paired bran
 \end{minipage}
 \end{table}
 
-The logistic specifications use the same directional target as CNN1D and map the flattened sequence into a linear index. Comparing them across scaling schemes measures how much ranking information is exposed by normalization alone. Comparing logistic and CNN1D under local scaling measures the increment associated with nonlinear interactions across adjacent observations. The chart-CNN1D comparison then asks whether binary spatial encoding produces an economically different ranking after both models receive the same locally normalized history.
+The logistic specifications use the same directional target as CNN1D and map the flattened sequence into a linear index. Comparing them across scaling schemes measures how much ranking information is exposed by normalization alone. Comparing logistic and CNN1D under local scaling measures the increment associated with nonlinear interactions across adjacent observations. The chart CNN/CNN1D comparison then asks whether binary spatial encoding produces an economically different ranking after both models receive the same locally normalized history.
 
 The final comparison studies complementarity. Multimodal inputs are paired by stock, formation date, input interval, and forecast horizon. A stable improvement from fusion would show that the chart and sequence branches extract differences that are useful in the portfolio sort. Similar branch and fusion performance would point toward a common economic signal. This evidence is descriptive because the fusion rule and optimization can constrain the joint model. The central interpretation therefore rests on patterns that recur across scaling schemes, input windows, learners, and the separate overlap tests.
 
@@ -113,12 +113,12 @@ The paper reports complete grids because input length, horizon, weighting, and s
 
 \subsection{Price-based benchmarks}\label{subsec:benchmarks}
 
-Four transparent price-based benchmarks show how much of the learned performance is attainable with interpretable signals. Medium-horizon continuation follows the past-return logic of \textcite{jegadeeshReturnsBuyingWinners1993a} and uses the cumulative return over 252 trading days after skipping the most recent 21 days,
+Four transparent price-based benchmarks show how much of the learned performance is attainable with interpretable signals. Momentum (MOM) follows the past-return logic of \textcite{jegadeeshReturnsBuyingWinners1993a} and uses the cumulative return over 252 trading days after skipping the most recent 21 days,
 \begin{equation}
- z^{\mathrm{CONT}}_{i,t}=\prod_{j=22}^{273}(1+r_{i,t-j})-1.
- \label{eq:cont}
+ z^{\mathrm{MOM}}_{i,t}=\prod_{j=22}^{273}(1+r_{i,t-j})-1.
+ \label{eq:mom}
 \end{equation}
-We denote this implemented rule CONT. Its 252 compounded returns start after a 21-day skip, so the oldest observation lies 273 trading days in the past; the label avoids equating this exact window with conventional 12-minus-1 momentum.
+Excluding the most recent 21 trading days separates medium-horizon momentum from the short-run reversal patterns captured by STR and WSTR.
 
 The one-month and one-week reversal scores follow \textcite{jegadeeshEvidencePredictableBehavior1990} and \textcite{lehmannFadsMartingalesMarket1990} and are
 \begin{equation}
