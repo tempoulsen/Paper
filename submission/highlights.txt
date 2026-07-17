@@ -1,4 +1,4 @@
-• Local high-low scaling explains most chart-CNN return predictability.
-• A 1D temporal CNN nearly matches a 2D chart CNN on locally scaled data.
-• Multimodal fusion adds little beyond the stronger single representation.
-• Predictability weakens after costs, liquidity screens, and after 2020.
+• Local high-low scaling exposes a strong weekly return ranking.
+• CNN1D reproduces chart CNN performance from the image-scaled sequence.
+• Multimodal fusion provides limited gains over the strongest single model.
+• Performance is concentrated in small, illiquid stocks and weakens after 2019.

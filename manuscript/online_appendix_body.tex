@@ -4,7 +4,7 @@ This supplement records the implementation details and result grids that support
 
 \subsection{Sample, timing, and portfolio design}
 
-Table~\ref{tab:app_design_summary} collects the choices that apply across the learned models. The chart CNN, CNN1D, and multimodal models use the same CRSP source panel, target definition, sample split, and downstream portfolio rules. A method enters a formation-date cross section when its required input history and subsequent holding-period return are available.
+Table~\ref{tab:app_design_summary} collects the choices that apply across the learned models. The chart CNN, CNN1D, and multimodal models use the same CRSP source panel, target definition, sample split, and portfolio rules. A method enters a formation-date cross section when its required input history and subsequent holding-period return are available.
 
 \begin{table}[htbp]
 \centering
@@ -104,7 +104,7 @@ Late fusion & Prediction-level combination & Pretrained chart and CNN1D probabil
 
 \section{Complete representation decomposition}\label{app:scaling_grid}
 
-Table~\ref{tab:app_scaling_grid} reports the full scaling exercise from the canonical analysis. It extends the article's weekly main grid to monthly and quarterly return horizons while preserving both portfolio weighting rules.
+Table~\ref{tab:app_scaling_grid} reports the full scaling exercise from the main analysis. It extends the article's weekly main grid to monthly and quarterly return horizons while preserving both portfolio weighting rules.
 
 \begin{table}[htbp]
 \centering
@@ -120,34 +120,34 @@ Model & EW & VW & EW & VW & EW & VW \\
 \midrule
 \multicolumn{7}{@{}l}{\textit{Panel A. 5-day return horizon}} \\
 Chart CNN & 5.88 & 1.39 & 6.52 & 1.44 & 3.72 & 1.18 \\
-Logistic, local image scale & 4.88 & 1.25 & 5.22 & 1.09 & 5.44 & 1.12 \\
+Logistic, image scale & 4.88 & 1.25 & 5.22 & 1.09 & 5.44 & 1.12 \\
 Logistic, cumulative scale & 0.18 & $-0.04$ & $-0.41$ & $-0.51$ & $-0.26$ & $-0.53$ \\
 Logistic, devolatized scale & 2.80 & 0.79 & 2.73 & 0.48 & 2.70 & 0.66 \\
-CNN1D, local image scale & 6.24 & 1.16 & 6.55 & 1.12 & 5.89 & 2.06 \\
+CNN1D, image scale & 6.24 & 1.16 & 6.55 & 1.12 & 5.89 & 2.06 \\
 CNN1D, cumulative scale & 4.88 & 1.47 & 5.12 & 1.41 & 4.66 & 1.15 \\
 CNN1D, devolatized scale & 4.39 & 0.73 & 5.26 & 1.04 & 4.82 & 1.28 \\
 \addlinespace[3pt]
 \multicolumn{7}{@{}l}{\textit{Panel B. 20-day return horizon}} \\
 Chart CNN & 1.35 & 0.10 & 2.26 & 0.49 & 0.57 & $-0.29$ \\
-Logistic, local image scale & 2.03 & 0.56 & 2.37 & 0.41 & 1.59 & 0.60 \\
+Logistic, image scale & 2.03 & 0.56 & 2.37 & 0.41 & 1.59 & 0.60 \\
 Logistic, cumulative scale & 0.02 & 0.37 & $-0.29$ & $-0.08$ & $-0.30$ & $-0.64$ \\
 Logistic, devolatized scale & 1.27 & 0.59 & 1.02 & 0.28 & 0.98 & 0.12 \\
-CNN1D, local image scale & 2.18 & 0.41 & 2.15 & 0.41 & 1.74 & 0.51 \\
+CNN1D, image scale & 2.18 & 0.41 & 2.15 & 0.41 & 1.74 & 0.51 \\
 CNN1D, cumulative scale & 0.94 & 0.92 & 0.97 & 0.56 & 1.45 & 0.63 \\
 CNN1D, devolatized scale & 1.17 & 0.16 & 1.73 & 0.53 & 1.22 & 0.30 \\
 \addlinespace[3pt]
 \multicolumn{7}{@{}l}{\textit{Panel C. 60-day return horizon}} \\
 Chart CNN & 0.23 & $-0.18$ & 0.34 & 0.21 & 0.55 & 0.45 \\
-Logistic, local image scale & 0.97 & 0.04 & 0.94 & 0.21 & 0.55 & 0.21 \\
+Logistic, image scale & 0.97 & 0.04 & 0.94 & 0.21 & 0.55 & 0.21 \\
 Logistic, cumulative scale & 0.37 & 0.11 & $-0.02$ & $-0.06$ & $-0.30$ & $-0.54$ \\
 Logistic, devolatized scale & 0.66 & 0.08 & 0.61 & 0.37 & 0.40 & 0.17 \\
-CNN1D, local image scale & 0.99 & 0.28 & 0.46 & 0.15 & 0.46 & 0.25 \\
+CNN1D, image scale & 0.99 & 0.28 & 0.46 & 0.15 & 0.46 & 0.25 \\
 CNN1D, cumulative scale & 0.26 & 0.33 & 0.13 & 0.16 & 0.34 & 0.21 \\
 CNN1D, devolatized scale & 0.83 & 0.13 & 0.65 & 0.34 & 0.45 & 0.21 \\
 \bottomrule
 \end{tabular}
 \begin{minipage}{\textwidth}
-\footnotesize\textit{Note.} Entries are annualized gross Sharpe ratios of high-minus-low decile portfolios over 2001--2024. EW and VW denote equal- and value-weighted legs. Local image scale applies the chart's within-window high--low normalization to the continuous sequence. Cumulative scale anchors the path to the first close, and devolatized scale expresses changes relative to lagged volatility.
+\footnotesize\textit{Note.} Entries are annualized gross Sharpe ratios of high-minus-low decile portfolios over 2001--2024. EW and VW denote equal- and value-weighted legs. Image scale applies the chart's within-window high--low normalization to the continuous sequence. Cumulative scale anchors the path to the first close, and devolatized scale expresses changes relative to lagged volatility.
 \end{minipage}
 \end{table}
 
@@ -184,7 +184,7 @@ $I60/R60$     & 0.25 & 0.07 & 0.46 & 0.36 & 0.05 & $-0.01$ & 0.74 & 0.53 \\
 \bottomrule
 \end{tabular}
 \begin{minipage}{\textwidth}
-\footnotesize\textit{Note.} Each cell reports one selected chart CNN specification from the canonical analysis. Returns are formed at the frequency associated with $R$ and are annualized using 52, 12, or 4 observations per year.
+\footnotesize\textit{Note.} Each cell reports one selected chart CNN specification from the main analysis. Returns are formed at the frequency associated with $R$ and are annualized using 52, 12, or 4 observations per year.
 \end{minipage}
 \end{table}
 
@@ -252,6 +252,16 @@ $I60/R60$ & 0.75 & 0.57 & 0.53 & 0.43 & 0.43 & 0.29 & 0.64 & 0.50 \\
 
 \FloatBarrier
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{chart_cnn_i20r5_yearly_sharpe.png}
+\caption{Annual gross and net Sharpe ratios for the representative chart CNN}
+\label{fig:app_yearly_chartcnn}
+\begin{minipage}{\textwidth}
+\footnotesize\textit{Note.} The figure reports annual Sharpe ratios for the equal-weighted chart CNN $I20/R5$ portfolio from 2001 through 2024. The net series applies the common transaction-cost schedule.
+\end{minipage}
+\end{figure}
+
 \section{Rank stability across input windows}\label{app:rank_stability}
 
 Table~\ref{tab:app_rank_stability} reports the underlying correlations in a compact tabular form. Each row holds the model family and return horizon fixed and compares the cross-sectional score rankings produced by two input lengths.
@@ -280,7 +290,7 @@ Multimodal & $R60$ & 0.21 & 0.11 & 0.32 \\
 \bottomrule
 \end{tabular}
 \begin{minipage}{\textwidth}
-\footnotesize\textit{Note.} Entries are time-series averages of formation-date Spearman correlations between two input-window scores from the same learned-model family over 2001--2024. The correlations are computed on the common stock-date panel used in the canonical overlap analysis.
+\footnotesize\textit{Note.} Entries are time-series averages of formation-date Spearman correlations between two input-window scores from the same learned-model family over 2001--2024. The correlations are computed on the common stock-date panel used in the main overlap analysis.
 \end{minipage}
 \end{table}
 

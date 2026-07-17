@@ -1,6 +1,6 @@
 \section{Data, representations, and empirical design}\label{sec:design}
 
-Chart construction combines local high--low scaling, a binary grayscale image, and flexible learning. We separate these components through a controlled representation test. The logistic models measure how scaling affects the stock ranking before nonlinear learning is added. The chart CNN and CNN1D then receive the same locally scaled market history, and the multimodal model tests whether their representations contain complementary predictive information. We evaluate every learned score under common sample, timing, ranking, weighting, and transaction-cost rules.
+Chart construction combines local high--low scaling, a binary grayscale image, and flexible learning. We examine these components through a controlled representation comparison. The logistic models show how scaling affects the stock ranking within a fixed linear architecture before nonlinear learning is added. The chart CNN and CNN1D then receive the same locally scaled market history, and the multimodal model tests whether their representations contain complementary predictive information. We hold timing, ranking, weighting, and transaction-cost rules fixed across the learned scores.
 
 \subsection{Sample and prediction target}\label{subsec:sample}
 
@@ -8,169 +8,182 @@ To hold the data environment fixed, we construct a daily CRSP panel of ordinary 
 
 We separate model development from economic evaluation. Model development uses data from 1993--2000, and all portfolio results are evaluated out of sample from 2001 to 2024. We report the full evaluation period, a 2001--2019 baseline sample, and a 2020--2024 extension sample.
 
-Let $I\in\{5,20,60\}$ denote the number of trading days in the input window and $R\in\{5,20,60\}$ the future return horizon. We refer to a model with a 20-day input and a 5-day target as $I20/R5$. For stock $i$ at formation date $t$, the directional label is
+Our model grid combines 5-, 20-, and 60-day input windows with 5-, 20-, and 60-day forecast horizons. We write each specification as $I/R$, so $I20/R5$ uses 20 trading days of market history to predict the return sign over the next five trading days. For stock $i$ at formation date $t$, the directional target is defined by
 \begin{equation}
  y_{i,t}^{(R)}=\mathbbm{1}\!\left(\prod_{j=1}^{R}(1+r_{i,t+j})-1>0\right).
  \label{eq:label}
 \end{equation}
-The return on date $t$ is excluded from the target. Every input uses information available by the close of date $t$.
+The target period begins at $t+1$, after all input information has been observed by the close of date $t$.
 
-Raw nominal prices can jump mechanically after splits. We therefore reconstruct a price-consistent close path from daily returns within each lookback window and scale open, high, and low prices relative to that path. The moving-average channel uses a window equal to $I$. These reconstructed open, high, low, close, moving-average, and volume histories form the common economic input to the chart and sequence models.
+Stock splits can create jumps in raw nominal prices even when the underlying return path is continuous. We therefore set the first close in each input window to one, reconstruct subsequent closes from daily returns, and scale open, high, and low prices consistently with the reconstructed close series. The moving-average window equals $I$. The chart and sequence inputs are constructed from this common price-consistent market history and trading volume.
 
-History requirements differ across methods. Learned inputs require 5--60 days, the MOM benchmark reaches 273 trading days into the past, and the longest moving-average feature reaches 1,000 days. Standalone portfolios draw from the common CRSP source universe and use common downstream rules, while signal-specific histories can produce different eligible cross-sections. The learned-model overlap tests impose an exact common stock-date panel. We preserve this distinction throughout the paper because portfolio performance and signal overlap answer different questions.
+Within each specification, the three learned models use the same underlying data. Eligible cross-sections can vary across input windows and price-based benchmarks because the signals require different amounts of historical data. Each portfolio uses the sample available for its signal under common portfolio rules. Direct comparisons of the chart CNN, CNN1D, and multimodal scores use an exact common stock-date sample. Portfolio performance and signal overlap are therefore evaluated on samples suited to their distinct questions.
 
 \subsection{From market histories to charts}\label{subsec:representation_design}
 
-A price chart makes two conceptually separate changes to the underlying observations. It first places the price path on a local scale and then draws the scaled values in a two-dimensional field. The first operation determines which price histories appear similar across stocks. The second determines which local patterns a spatial filter can detect. Our representation tests separate these operations.
+The chart input combines local scaling with a binary grayscale representation. Local scaling removes nominal price levels and preserves the relative shape and range of each stock's recent path. Chart construction then places open, high, low, close, moving-average, and volume information in a fixed image layout processed by the chart CNN. We use the representation tests to assess the contribution of local scaling and the chart image.
 
-For each stock-window, let $m_{i,t}^{(I)}$ and $M_{i,t}^{(I)}$ be the minimum and maximum across all open, high, low, close, and moving-average observations in the window. Each price-channel observation $x_{i,t-j}$ is transformed into
+For each stock and formation date, we scale the five price channels within the lookback window. Let $m_{i,t}^{(I)}$ and $M_{i,t}^{(I)}$ denote the minimum and maximum calculated jointly across all open, high, low, close, and moving-average observations in that window. Each price-channel observation $x_{i,t-j}$ is then transformed using these values,
 \begin{equation}
  \widetilde{x}_{i,t-j}
  =\frac{x_{i,t-j}-m_{i,t}^{(I)}}{M_{i,t}^{(I)}-m_{i,t}^{(I)}}.
  \label{eq:image_scale}
 \end{equation}
-Volume is min--max scaled separately within the same window.
+Trading volume is min--max scaled separately within the same window.
 
-The scaled price channels are drawn as daily open-high-low-close bars with a moving-average line. Volume occupies a separate lower panel. The 5-, 20-, and 60-day images have dimensions $32\times15$, $64\times60$, and $96\times180$ pixels. Pixels belonging to a bar, line, or volume element take value one and empty pixels take value zero. The finished chart removes the nominal price level, preserves local geometry, and discretizes the continuous sequence.
+After scaling, we construct the chart using daily OHLC bars, a moving-average line, and a separate lower panel for trading volume. The 5-, 20-, and 60-day images have dimensions $32\times15$, $64\times60$, and $96\times180$ pixels. Pixels corresponding to the OHLC bars, moving-average line, and volume bars take value one, while empty pixels take value zero. The resulting binary grayscale image in Figure~\ref{fig:chart_input_transformation} preserves the relative structure of recent prices and volume.
 
-The numerical sequence contains the same six channels in chronological order. We study three sequence encodings. The image-scaled sequence retains the continuous values from Eq.~\eqref{eq:image_scale} and separately scaled volume. The cumulative-return scale anchors each price channel to the first close in the window. The devolatized-return scale expresses price changes relative to lagged exponentially weighted volatility and represents volume through relative changes. Scheme-specific channels are standardized using moments estimated in the development sample and then fixed for the evaluation period.
-
-We first remove mechanical discontinuities in the nominal price record. The first close in each lookback window is anchored to one, subsequent closes are reconstructed from returns, and open, high, and low prices are expressed consistently with that reconstructed path. We then apply the representation-specific normalization. For the chart and image-scaled sequence, the minimum and maximum are computed jointly across the five price channels within the stock-window, while volume is scaled against its own within-window range. Each stock receives a new scale at every formation date using only its own recent history.
-
-The two representations diverge after this common normalization. The sequence model retains the scaled open, high, low, close, moving-average, and volume observations as continuous, chronologically ordered channels. The chart maps the scaled price variables to a fixed-height price panel, reserves a separate lower panel for volume, and renders the result as a binary pixel matrix. The chart consequently discards within-pixel numerical precision while preserving the relative location and shape of the recent path. This ordering isolates the economic role of local scaling more closely than a comparison between raw numerical inputs and chart images. A strong image-scaled sequence model shows that chart-style normalization carries predictive information even when binary rendering and two-dimensional layout are removed.
-
-Table~\ref{tab:design_map} shows how the models turn these encodings into a decomposition. The logistic comparisons measure how much cross-sectional ranking is already present in each encoding. CNN1D adds nonlinear temporal feature extraction to the same numerical sequence. The chart CNN combines local scaling, binary rendering, and two-dimensional convolution. The multimodal model supplies both encodings to paired branches.
-
-\begin{table}[htbp]
+\begin{figure}[htbp]
 \centering
-\caption{Models in the representation decomposition}
-\label{tab:design_map}
-\small
-\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.22\textwidth}>{\raggedright\arraybackslash}p{0.22\textwidth}L>{\raggedright\arraybackslash}p{0.20\textwidth}@{}}
-\toprule
-Model & Input scale & Representation & Model structure \\
-\midrule
-Logistic, cumulative & Initial-close anchor & Continuous ordered channels & Linear logit \\
-Logistic, devolatized & Lagged volatility & Continuous ordered changes & Linear logit \\
-Logistic, image scale & Local min--max & Continuous ordered channels & Linear logit \\
-CNN1D, image scale & Local min--max & Continuous ordered channels & Temporal convolution \\
-Chart CNN & Local min--max & Binary two-dimensional chart & Spatial convolution \\
-Multimodal & Local min--max & Continuous sequence and binary chart & Paired branches with fusion \\
-\bottomrule
-\end{tabularx}
-\begin{minipage}{\textwidth}
-\footnotesize\textit{Note.} All inputs contain reconstructed open, high, low, close, moving-average, and volume histories from the same stock-window. The comparison narrows the source of performance but also changes input precision and convolution geometry when moving between chart and sequence models.
-\end{minipage}
-\end{table}
+\includegraphics[width=0.82\textwidth,height=0.78\textheight,keepaspectratio]{chart_input_transformation.png}
+\caption{Example of chart construction and model input. The upper panel shows a conventional 60-day OHLC chart for Envela Corporation (ELA). The lower panel shows the corresponding binary grayscale image used by the chart CNN, with the OHLC bars and moving-average line in the price panel and trading volume in the lower panel.}
+\label{fig:chart_input_transformation}
+\end{figure}
 
-The logistic specifications use the same directional target as CNN1D and map the flattened sequence into a linear index. Comparing them across scaling schemes measures how much ranking information is exposed by normalization alone. Comparing logistic and CNN1D under local scaling measures the increment associated with nonlinear interactions across adjacent observations. The chart CNN/CNN1D comparison then asks whether binary spatial encoding produces an economically different ranking after both models receive the same locally normalized history.
+Each sequence observation contains six aligned daily series in chronological order. The channels are open, high, low, close, moving average, and trading volume. We evaluate the image scale, cumulative-return scale, and devolatized-return scale. Under image scaling, the price channels retain the continuous within-window values from Eq.~\eqref{eq:image_scale}, while volume is scaled separately. The cumulative-return scale anchors each price channel to the first close in the lookback window. The devolatized-return scale expresses price changes relative to lagged exponentially weighted volatility and volume through relative changes. We standardize each transformed channel using development-sample means and standard deviations that remain fixed throughout the evaluation period.
+
+The chart and image-scaled sequence use the same local normalization. The sequence retains continuous open, high, low, close, moving-average, and volume observations as channels ordered by trading day. The chart converts these observations into a fixed binary pixel layout, which reduces numerical precision while preserving relative shape and location. The image-scaled sequence therefore shows how much of the chart CNN's stock ranking can be reproduced from the same locally scaled market history.
+
+Table~\ref{tab:design_map} summarizes the model inputs, scaling schemes, and model structures used in the representation comparison. The logistic classifiers use the scaled sequence inputs as linear indices and show how much predictive content each scaling scheme makes available to a linear model. CNN1D learns nonlinear temporal patterns from the same numerical channels. The chart CNN learns from the binary grayscale image, and the multimodal model combines the chart and sequence representations through paired branches.
+
+The logistic specifications use the same directional target as CNN1D and map the flattened sequence into a linear index. Comparing them across scaling schemes measures how scaling changes the ranking within a fixed linear model. Comparing logistic and CNN1D under local scaling measures the increment associated with nonlinear interactions across adjacent observations. The chart CNN/CNN1D comparison then asks whether the binary image representation produces an economically different ranking after both models receive the same locally normalized history.
 
 The final comparison studies complementarity. Multimodal inputs are paired by stock, formation date, input interval, and forecast horizon. A stable improvement from fusion would show that the chart and sequence branches extract differences that are useful in the portfolio sort. Similar branch and fusion performance would point toward a common economic signal. This evidence is descriptive because the fusion rule and optimization can constrain the joint model. The central interpretation therefore rests on patterns that recur across scaling schemes, input windows, model specifications, and the separate overlap tests.
 
 The design narrows the source of performance without creating a pure treatment for layout. Chart and sequence models differ in numerical precision, dimensionality, filter geometry, depth, and capacity. We interpret similar performance after local scaling as evidence that the pixel image is unnecessary for reproducing the tested ranking. Residual differences can arise from any of the remaining representation or architecture features.
 
+\begin{table}[htbp]
+\centering
+\caption{Models and scaling schemes in the representation comparison}
+\label{tab:design_map}
+\small
+\renewcommand{\arraystretch}{1.06}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.21\textwidth}>{\raggedright\arraybackslash}p{0.23\textwidth}>{\raggedright\arraybackslash}p{0.25\textwidth}L@{}}
+\toprule
+Model & Scaling & Input representation & Model structure \\
+\midrule
+Logistic classifier & Cumulative-return scale & Continuous sequence & Linear logit \\
+Logistic classifier & Devolatized-return scale & Continuous sequence & Linear logit \\
+Logistic classifier & Image scale & Continuous sequence & Linear logit \\
+CNN1D & Cumulative-return scale & Continuous sequence & Temporal convolution \\
+CNN1D & Devolatized-return scale & Continuous sequence & Temporal convolution \\
+CNN1D & Image scale & Continuous sequence & Temporal convolution \\
+Chart CNN & Image scale & Binary grayscale image & Two-dimensional convolution \\
+Multimodal model & Image scale & Chart and sequence & Paired branches with fusion \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\FloatBarrier
+
 \subsection{Prediction models and estimation}\label{subsec:models}
 
-The chart CNN follows the architecture used for chart-based return prediction in \textcite{reimagining_price_trends_jiang}. Each convolutional block applies a $5\times3$ filter, batch normalization, a leaky rectified linear activation, and max pooling. The 5-, 20-, and 60-day networks contain two, three, and four blocks. After the final block, the feature map is flattened, dropout is applied, and a linear layer produces two return-sign logits. This architecture establishes the chart benchmark whose performance the numerical models seek to explain.
+The chart CNN architecture follows the design used by \textcite{reimagining_price_trends_jiang}. We estimate separate variants for the 5-, 20-, and 60-day chart inputs. Their depth increases with the length and resolution of the input image, with two, three, and four convolutional blocks, respectively. Each block applies a $5\times3$ convolution, batch normalization, Leaky ReLU activation, and max pooling. The final feature map is flattened, dropout is applied, and a fully connected layer maps the learned representation to the two return-sign classes.
 
-CNN1D processes the six numerical channels along the time dimension. Its filters span three adjacent trading days and observe every channel at each location. The 5-, 20-, and 60-day variants contain one, two, and three convolutional blocks, with 64 channels in the first block and twice as many after each subsequent block. The output layer matches the chart model's two-class prediction task.
+We estimate separate CNN1D architectures for the 5-, 20-, and 60-day sequence inputs. Each block applies a one-dimensional convolution along the time dimension, followed by the same normalization, activation, and pooling operations as in the chart CNN. The filters span three trading days and observe all six channels at each location. The three input lengths use one, two, and three blocks, respectively. The first block has 64 output channels, and the channel count doubles in each subsequent block. After flattening, the final sequence representation passes through the same dropout and fully connected classification layers as the chart CNN.
 
-The main multimodal specification pairs the chart and CNN1D branches for the same stock, date, $I$, and $R$. If $f^{2D}_{i,t}$ and $f^{1D}_{i,t}$ are the learned branch features, the joint representation is
+Each multimodal observation pairs a chart image and a sequence input for the same stock, formation date, input interval, and forecast horizon. The chart CNN and CNN1D branches process their inputs separately. Let $f^{2D}_{i,t}$ and $f^{1D}_{i,t}$ denote the corresponding feature vectors. Feature concatenation forms the joint representation
 \begin{equation}
  f^{MM}_{i,t}=\left[f^{2D}_{i,t};f^{1D}_{i,t}\right].
  \label{eq:fusion}
 \end{equation}
-A linear classifier maps the concatenated vector to the return-sign logits. We also examine late fusion through probability or logit averaging. Fusion performance is a suggestive complementarity diagnostic. Optimization, calibration, parameter count, and the training seed can also limit any gain from combining branches.
+The concatenated feature vector is passed to a linear classifier and the final softmax layer. This design allows each branch to learn its own representation before the classifier combines them. We also examine late fusion, where the chart CNN and CNN1D produce separate predictions that are combined through probability or logit averaging. Comparing the multimodal and single-branch models tests whether the two representations contain complementary predictive information.
 
-Each model produces a positive-class probability
+The final layer of each model produces one score for the down class and one for the up class. The softmax transformation converts these scores into probabilities. The probability assigned to the up class is
 \begin{equation}
  s_{i,t}=\frac{\exp(z_{i,t}^{(1)})}
  {\exp(z_{i,t}^{(0)})+\exp(z_{i,t}^{(1)})},
  \label{eq:score}
 \end{equation}
-which is used only as a within-date ranking score. We make no calibration claim for $s_{i,t}$ as an expected return or physical probability.
+We carry $s_{i,t}$ forward as a within-date ranking score for the portfolio analysis. We do not interpret it as a calibrated expected return.
 
-We estimate the model grid separately by input interval, forecast horizon, model family, and, where applicable, scaling or fusion design. Every neural specification minimizes cross-entropy loss with Adam, a learning rate of $10^{-4}$, batches of 128, dropout of 0.50, Xavier initialization, and at most 50 epochs. We retain the model parameters from the epoch with the lowest validation loss and stop after two epochs without improvement. We refer to this saved set of model parameters as the selected checkpoint. Each fitted model solves the same positive versus non-positive return classification problem. The selected checkpoint supplies one score for each eligible stock-date observation in the evaluation period, and model parameters are not updated after 2000.
+All learned model families are estimated within a common prediction framework. We estimate separate models across input intervals, forecast horizons, model families, and, where applicable, sequence scaling or fusion design. The neural models use cross-entropy loss, the Adam optimizer, a learning rate of $10^{-4}$, a batch size of 128, dropout probability of 0.50, Xavier initialization, and a maximum of 50 training epochs.
 
-Development observations from 1993--2000 are assigned to a 70\% training set and a 30\% validation set using a fixed seed. Because the split is taken over stock-date observations, correlated observations from the same firm or calendar period can appear in both subsets. Validation performance therefore measures fit within the development environment and is not evidence of economic performance in a later period. The economically relevant separation occurs at the 2001 boundary, after which observations enter portfolio evaluation without further fitting or checkpoint selection. A temporally blocked validation design would provide a stricter tuning exercise.
+Training stops when validation loss does not improve for two consecutive epochs. We retain the model parameters from the epoch with the lowest validation loss as the selected checkpoint. These parameters remain fixed throughout the 2001--2024 evaluation period and produce one up-class probability for each eligible stock-date observation.
 
-The main empirical analysis uses one selected checkpoint for each learned specification, so a cell can reflect both its representation and the optimization outcome of that fitted network. For the chart CNN, matched five-member forecast averages are also available for $I5/R5$ and $I20/R5$. Those sensitivity results are reported in the online appendix and leave the weekly conclusions essentially unchanged, but they do not constitute a repeated-seed design for every model family and horizon. We consequently place greater weight on patterns that recur across input lengths, model classes, portfolio weighting schemes, and economic diagnostics.
+Model development uses data from 1993--2000. We randomly divide stock-date observations into 70\% training and 30\% validation sets using a fixed seed. Observations from the same firm or calendar period can therefore appear in both sets. Validation is used to select the checkpoint within the pre-2001 development sample. Portfolio evaluation begins in 2001, after model fitting and checkpoint selection are complete.
+
+The main analysis uses one selected checkpoint for each learned specification. The portfolio score is therefore the single-model up-class probability from that checkpoint. For $I5/R5$ and $I20/R5$, the online appendix compares the single-model chart CNN with matched five-member forecast averages. This sensitivity check is limited to these weekly chart CNN specifications, and the weekly conclusions remain unchanged.
 
 \subsection{Portfolio construction}\label{subsec:portfolios}
 
-Only the ordering of scores within a formation-date cross section enters the sort. The positive-class probability is not converted into an expected return, and differences in probability calibration across model families do not receive a direct portfolio weight. Each eligible cross section is divided into deciles. The high-minus-low strategy buys decile 10 and shorts decile 1. Equal weighting gives each constituent the same weight within its leg. Value weighting uses market capitalization observed before formation and normalizes weights separately within the long and short legs. Each leg carries one dollar of notional, so the spread has zero net investment and two dollars of gross exposure.
+At each formation date, stocks are sorted according to the relevant model score or benchmark signal, and the eligible cross-section is divided into ten deciles. The high-minus-low portfolio buys the highest-score decile and shorts the lowest-score decile. We report equal-weighted and value-weighted portfolios. Equal weighting assigns the same weight to each stock within a leg, while value weighting uses lagged market capitalization normalized separately within the long and short legs. Each leg carries one dollar of notional, so the spread has zero net investment and two dollars of gross exposure.
 
-The timing convention links the statistical target directly to the traded ranking. At formation date $t$, every model input ends with information available by the close of that date. The associated score ranks stocks for the return realized from $t+1$ through $t+R$; the date-$t$ return is outside the target. We retain one formation date per holding interval, producing non-overlapping weekly, monthly, and quarterly return series for $R=5$, 20, and 60. For a portfolio return series $R_{p,t}$ with $K\in\{52,12,4\}$ observations per year, the reported Sharpe ratio is
+Weekly, monthly, and quarterly portfolios correspond to the 5-, 20-, and 60-trading-day forecast horizons. At formation date $t$, the model score uses information available through the close of that date and ranks stocks for the return from $t+1$ through $t+R$. We use one formation date per holding interval, producing non-overlapping return series at each evaluation frequency. For a portfolio return series $R_{p,t}$ with $K\in\{52,12,4\}$ observations per year, the reported Sharpe ratio is
 \begin{equation}
  \mathrm{SR}_{p}=\sqrt{K}\,\frac{\overline{R}_{p}}{\operatorname{sd}(R_{p,t})}.
  \label{eq:sharpe}
 \end{equation}
 No risk-free rate is subtracted from the zero-net-investment spread.
 
-Eligibility is signal-specific. A learned model requires its own lookback window, while benchmark signals can require histories extending to 273 or 1,000 trading days. Portfolio comparisons therefore apply common ranking, horizon, weighting, and cost rules to methods drawn from the same CRSP source universe, but they need not contain the exact same stock-date observations. The overlap diagnostics impose the stricter common panel for the three learned scores. This distinction keeps the portfolio exercise representative of each available signal while reserving matched-observation comparisons for questions about ranking overlap and conditional predictive content.
+Benchmark signals can require longer histories than the learned models, which produces different eligible cross-sections. All methods use common ranking, horizon, weighting, and transaction-cost rules within the same CRSP universe. Comparisons among the chart CNN, CNN1D, and multimodal model use the exact common stock-date sample described in Section~\ref{subsec:sample}.
 
-The paper reports complete grids because input length, horizon, weighting, and sample period create meaningful heterogeneity. We use $I20/R5$ as a representative specification in focused tables and economic tests. It is centrally located in the short-horizon grid and performs strongly for each learned family. This choice was made after examining the grid, so best-cell comparisons are descriptive.
+We report the complete grid across input intervals and forecast horizons. Later figures and economic tests use $I20/R5$ as the representative weekly specification. It is central to the short-horizon grid, performs strongly across all three learned model families, and allows the models to be compared under the same horizon structure. We selected this specification after examining the grid, so the focused results are descriptive.
 
 \subsection{Price-based benchmarks}\label{subsec:benchmarks}
 
-Four transparent price-based benchmarks show how much of the learned performance is attainable with interpretable signals. Momentum (MOM) follows the past-return logic of \textcite{jegadeeshReturnsBuyingWinners1993a} and uses the cumulative return over 252 trading days after skipping the most recent 21 days,
+We compare the learned models with four transparent price-based benchmark strategies. These are momentum (MOM), one-month short-term reversal (STR), one-week short-term reversal (WSTR), and the multi-horizon trend strategy (TREND). MOM captures continuation, STR and WSTR capture reversal at different horizons, and TREND captures broader multi-horizon trend information. All four strategies are evaluated under the common portfolio rules described above.
+
+MOM is the medium-horizon continuation benchmark. Following \textcite{jegadeeshReturnsBuyingWinners1993a}, we implement a daily analogue of a 12--1 momentum strategy. The signal is the cumulative return over the previous 252 trading days, excluding the most recent 21 trading days,
 \begin{equation}
  z^{\mathrm{MOM}}_{i,t}=\prod_{j=22}^{273}(1+r_{i,t-j})-1.
  \label{eq:mom}
 \end{equation}
-Excluding the most recent 21 trading days separates medium-horizon momentum from the short-run reversal patterns captured by STR and WSTR.
+The exclusion of the most recent 21 trading days separates medium-horizon continuation from the short-term reversal patterns captured by STR and WSTR.
 
-The one-month and one-week reversal scores follow \textcite{jegadeeshEvidencePredictableBehavior1990} and \textcite{lehmannFadsMartingalesMarket1990} and are
+One-month short-term reversal (STR) follows \textcite{jegadeeshEvidencePredictableBehavior1990} and uses the negative of the previous 21-trading-day return. One-week short-term reversal (WSTR) follows \textcite{lehmannFadsMartingalesMarket1990} and uses the negative of the previous 5-trading-day return.
 \begin{equation}
  z^{\mathrm{STR}}_{i,t}=-\left(\frac{P_{i,t}}{P_{i,t-21}}-1\right),
  \qquad
  z^{\mathrm{WSTR}}_{i,t}=-\left(\frac{P_{i,t}}{P_{i,t-5}}-1\right).
  \label{eq:reversal}
 \end{equation}
-High scores identify recent losers. The processed price path used for these rules is split-consistent with the return history. WSTR is the closest explicit rule to the learned weekly target.
+High scores identify recent losers. The price series used for both signals is split-consistent with the return history. WSTR provides the closest transparent benchmark to the learned weekly forecast horizon.
 
-The final benchmark adapts the multi-horizon trend construction of \textcite{hanTrendFactorAny2016}. We use the moving-average lag set
+TREND follows the multi-horizon trend strategy of \textcite{hanTrendFactorAny2016} and combines moving-average information across several horizons. For each lag $L$ in the set
 \[
  \mathcal{L}=\{3,5,10,20,50,100,200,400,600,800,1000\}
 \]
-and define $x_{i,t,L}=\mathrm{MA}_{i,t,L}/P_{i,t}$ for $L\in\mathcal{L}$. Cross-sectional regressions map these ratios into the next holding-period return. The forecasting coefficients are the trailing mean of the previous 12 fully realized coefficient vectors. The date-$t$ score is
+we define $x_{i,t,L}=\mathrm{MA}_{i,t,L}/P_{i,t}$, which compares the moving average with the current price. At each formation date, a cross-sectional regression maps these signals into next-period returns. The forecasting coefficients are the trailing mean of the previous 12 fully realized coefficient vectors. The date-$t$ TREND score is
 \begin{equation}
  z^{\mathrm{TREND}}_{i,t}=\sum_{L\in\mathcal{L}}\overline{\beta}_{L,t}x_{i,t,L}.
  \label{eq:trend}
 \end{equation}
-TREND is a supervised linear benchmark with lagged coefficient estimation. Its transparency comes from explicit features, observable lagged coefficients, and a linear rolling forecast.
+TREND is a supervised linear benchmark with explicit features and lagged coefficient estimation.
 
 \subsection{Cost adjustment and implementation tests}\label{subsec:economic_tests}
 
-For leg $\ell\in\{\mathrm{long},\mathrm{short}\}$, conventional half-turnover is
+We report both gross and net portfolio performance. At each rebalancing date, turnover for each leg is measured from the change between its previous and target portfolio weights. For $\ell\in\{\mathrm{long},\mathrm{short}\}$, turnover is
 \begin{equation}
  \mathrm{Turnover}^{\ell}_{t}=\frac{1}{2}\sum_i
  \left|w^{\ell,\mathrm{target}}_{i,t}-w^{\ell,\mathrm{prev}}_{i,t}\right|.
  \label{eq:turnover}
 \end{equation}
-Reported turnover sums the two legs and converts the value to a monthly equivalent. The cost calculation uses the full absolute traded notional, equal to twice the conventional half-turnover measure. We apply a one-way cost of 10 basis points to stocks above the contemporaneous NYSE 80th-percentile market-cap breakpoint and 20 basis points to other stocks. Net return is
+Total turnover is the sum of turnover in the long and short legs and is reported as a monthly-equivalent average. Net performance applies a one-way transaction cost to the full absolute traded notional in both portfolio legs. This traded notional equals twice the conventional half-turnover measure used for reported turnover. Stocks above the contemporaneous NYSE 80th-percentile market-cap breakpoint are charged 10 basis points, while the remaining stocks are charged 20 basis points. Net return is
 \begin{equation}
  R^{\mathrm{net}}_{p,t}=R^{\mathrm{gross}}_{p,t}
  -\sum_{i,\ell}c_{i,t}\left|\Delta w^{\ell}_{i,t}\right|.
  \label{eq:netreturn}
 \end{equation}
-The schedule provides a common implementation stress test. A capacity assessment would additionally require stock-specific spreads, price impact, borrow fees, locate constraints, and short-sale availability.
+The common cost schedule provides a transparent implementation test. It does not account for stock-specific spreads, price impact, borrowing costs, short-sale constraints, or capacity limits.
 
-We therefore re-form the representative weekly portfolios after imposing more demanding investability screens. The screens require a price of at least \$5, dollar volume of at least \$1 million or \$5 million, market capitalization above the NYSE 20th-percentile breakpoint, or all three strict conditions jointly. The models are not re-estimated. We also regress weekly net high-minus-low returns on the market, size, value, and momentum factors of \textcite{carhartPersistenceMutualFund1997} and report annualized intercepts with Newey--West standard errors using four lags.
+We re-form the representative $I20/R5$ weekly portfolios under five tradability screens. The screens require a closing price of at least \$5, dollar volume of at least \$1 million or \$5 million, market capitalization above the NYSE 20th-percentile breakpoint, or the combined price, \$5 million dollar-volume, and market-capitalization conditions. Dollar volume equals closing price times trading volume at the formation date. The tests use the same saved model scores as the main analysis and leave the model parameters fixed.
+
+We obtain daily market, size, and value factors and the daily momentum factor from the Kenneth R. French Data Library. Each factor is compounded over the weekly holding interval. We then estimate Carhart four-factor regressions for weekly net high-minus-low returns \parencite{carhartPersistenceMutualFund1997}. The intercepts are annualized, and inference uses Newey--West standard errors with four lags.
 
 \subsection{Signal overlap and conditional content}\label{subsec:overlap_methods}
 
-Similar portfolio returns can conceal different stock selections. For each $(I,R)$ cell, we construct the exact stock-date intersection on which the chart CNN, CNN1D, and multimodal scores and future returns are all observed. We compute date-level Spearman rank correlations \parencite{spearmanProofMeasurementAssociation1904} and average them through time. We also correlate the resulting high-minus-low returns. The first statistic compares full cross-sectional orderings; the second asks whether differences in those orderings survive in the traded tails.
+The portfolio tests show whether the models produce economically useful rankings. We also examine whether the learned-model rankings contain distinct information. For each input interval and forecast horizon, we form an exact common stock-date panel on which all three learned-model scores and future returns are observed. We compute date-level Spearman rank correlations \parencite{spearmanProofMeasurementAssociation1904} and average them through time. These rank correlations compare the full cross-sectional orderings produced by the models.
 
-We also estimate date-level cross-sectional regressions using the Fama--MacBeth procedure \parencite{famaRiskReturnEquilibrium1973},
+The second diagnostic asks which learned-model scores retain predictive content when they are observed jointly. At each formation date, we estimate a cross-sectional regression of future returns on all three scores using the exact common stock-date panel \parencite{famaRiskReturnEquilibrium1973},
 \begin{equation}
  R_{i,t+1:t+R}=\alpha_t+\beta^{2D}_t s^{2D}_{i,t}
  +\beta^{1D}_t s^{1D}_{i,t}+\beta^{MM}_t s^{MM}_{i,t}
  +\varepsilon_{i,t+R}.
  \label{eq:joint_fmb}
 \end{equation}
-The Fama--MacBeth coefficients are averages of the date-level slopes. Their conventional test statistic divides the time-series mean by $\operatorname{sd}(\beta_t)/\sqrt{T}$. It does not apply an autocorrelation correction, so the significance levels are exploratory, especially at longer horizons, where the number of formation dates is smaller and persistence in the coefficient series can remain despite non-overlapping portfolio sampling. This convention differs from the weekly Carhart tests \parencite{carhartPersistenceMutualFund1997}, for which we use Newey--West standard errors with four lags.
+The Fama--MacBeth coefficients are the time-series averages of the date-level slopes. The conventional test statistics use the time-series standard errors of these slopes without an autocorrelation correction. We therefore treat the significance levels as exploratory, particularly at longer horizons.
 
-The coefficient magnitudes also require care. The regressors are positive-class probabilities produced by separately trained models, so their numerical scales can differ even when their induced rankings are similar. Correlation among the three scores can make a joint slope sensitive to which other scores enter the regression. We therefore use the encompassing regressions to test conditional association within the exact common stock-date panel. We do not interpret a coefficient as a structural contribution of an architecture or as the return generated by an independent trading signal. The rank correlations and portfolio sorts remain the more direct evidence for whether the models order stocks similarly and whether that ordering is economically consequential.
+A positive coefficient in the joint regression indicates that the corresponding model score contains predictive variation that is not fully absorbed by the other learned-model scores. The regression provides an incremental-content diagnostic within the exact common stock-date panel. Because the scores are up-class probabilities from separately trained models, their numerical scales can differ, and correlation among the scores can affect the coefficient magnitudes. We therefore focus on coefficient signs and patterns that recur across specifications. Rank correlations and portfolio sorts provide the direct evidence on ranking similarity and economic performance.
 
-The wider model grid creates an additional inferential boundary. Input length, forecast horizon, scaling, architecture, fusion, weighting, and sample period generate many related comparisons. The representative $I20/R5$ specification was selected after examining that grid, and we do not apply a formal multiple-testing correction. Claims about the representation mechanism therefore rely on recurring cross-cell patterns and on the separate benchmark, cost, tradability, and subperiod evidence. Raw incremental in-sample $R^2$ is excluded because adding regressors raises that statistic mechanically. Taken together, these choices make the tests informative about the empirical content and limits of the learned rankings while stopping short of search-adjusted or causal inference.
+The model grid contains related comparisons across input intervals, forecast horizons, scaling schemes, model architectures, fusion designs, weighting schemes, and sample periods. We selected the representative $I20/R5$ specification after examining the grid and do not apply a formal multiple-testing correction. We therefore base the interpretation on patterns that recur across the grid and on the separate benchmark, transaction-cost, tradability, and extension-sample evidence. The encompassing regressions provide exploratory evidence on conditional predictive content.
