@@ -1,4 +1,5 @@
-• Local high-low scaling exposes a strong weekly return ranking.
-• CNN1D reproduces chart CNN performance from the image-scaled sequence.
-• Multimodal fusion provides limited gains over the strongest single model.
-• Performance is concentrated in small, illiquid stocks and weakens after 2019.
+• We replicate Jiang et al.'s representation comparison through 2024.
+• Local high-low scaling recovers much of weekly chart-CNN performance.
+• Chart and numerical models produce overlapping but nonidentical rankings.
+• Fusion adds little; modest tradability screens make net returns negative.
+• Learned models and short-horizon price rules weaken after 2019.

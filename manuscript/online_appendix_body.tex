@@ -28,9 +28,69 @@ Turnover & Conventional half-turnover is computed separately for the long and sh
 \end{tabularx}
 \end{table}
 
+\subsection{Comparison with Jiang et al.'s design}
+
+Table~\ref{tab:app_jiang_comparison} separates inherited design elements from extensions and implementation differences. The comparison is descriptive: the analysis does not attribute differences in portfolio performance to any single choice.
+
+\begin{table}[htbp]
+\centering
+\caption{Design comparison with Jiang et al. (2023)}
+\label{tab:app_jiang_comparison}
+\scriptsize
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.18\textwidth}>{\raggedright\arraybackslash}p{0.36\textwidth}L@{}}
+\toprule
+Dimension & Jiang et al. (2023) & This study \\
+\midrule
+Development sample & 1993--2000; random 70\% training and 30\% validation split & 1993--2000; random 70\% training and 30\% validation split using a fixed seed \\
+Evaluation sample & 2001--2019 & 2001--2024, reported as a 2001--2019 baseline and a 2020--2024 extension \\
+Core model grid & Chart CNN, logistic classifier, and CNN1D; three scaling schemes and all nine $(I,R)$ cells & Same replication grid, plus multimodal feature fusion, late fusion, and direct learned-score comparisons \\
+Chart-CNN forecast aggregation & Five independent fits per configuration with forecasts averaged & One selected checkpoint in the main analysis; matched one- and five-member sensitivity checks for $I5/R5$ and $I20/R5$ \\
+Optimizer and learning rate & Adam with initial learning rate $10^{-5}$ & Adam with learning rate $10^{-4}$ \\
+Portfolio construction & Non-overlapping high-minus-low decile portfolios; equal and value weighting; 5-, 20-, and 60-day horizons & Same core portfolio construction, with exact common stock-date panels imposed for learned-score overlap tests \\
+Price-based benchmarks & MOM, STR, WSTR, and TREND & Same four benchmarks under the common portfolio protocol \\
+Reported cost schedule & 10 basis points for stocks above the NYSE 80th-percentile size breakpoint and 20 basis points otherwise & Same rate schedule; costs deducted from full absolute traded notional in both portfolio legs \\
+Tradability restrictions & Largest 500 stocks by market capitalization & Price of at least \$5; dollar volume of at least \$1 million or \$5 million; exclusion of NYSE microcaps; and a combined screen \\
+Recent-period analysis & Evaluation ends in 2019 & Separate 2020--2024 results with model parameters and portfolio rules held fixed \\
+\bottomrule
+\end{tabularx}
+\begin{minipage}{\textwidth}
+\footnotesize\textit{Note.} The Jiang et al. entries summarize their Sections II.C, III, and IV.B, Tables IV and IX, and Internet Appendix Table IA.IV. ``Same'' denotes an inherited design element, not an independently introduced feature. Differences in results can reflect several choices jointly as well as the additional evaluation years.
+\end{minipage}
+\end{table}
+
 \subsection{Representations and network architectures}
 
-The chart input contains binary open-high-low-close bars, a moving-average line with length $I$, and a separate volume panel. Prices and the moving average are jointly min--max scaled within the stock-window, and volume is scaled separately. The image-scaled sequence retains the six continuous open, high, low, close, moving-average, and volume channels after the corresponding within-window scaling. CNN1D applies convolution along the ordered trading-day dimension.
+The chart input contains binary open-high-low-close bars, a moving-average line with length $I$, and a separate volume panel. Prices and the moving average are jointly scaled to the stock-window high--low range, and volume is scaled separately. The image-scaled sequence retains the six continuous open, high, low, close, moving-average, and volume channels after the corresponding within-window scaling. CNN1D applies convolution along the ordered trading-day dimension.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.82\textwidth,height=0.78\textheight,keepaspectratio]{chart_input_transformation.png}
+\caption{Example of chart construction and model input. The upper panel shows a conventional 60-day OHLC chart for Envela Corporation (ELA). The lower panel shows the corresponding binary grayscale image used by the chart CNN, with the OHLC bars and moving-average line in the price panel and trading volume in the lower panel.}
+\label{fig:app_chart_input_transformation}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\caption{Models and scaling schemes in the representation comparison}
+\label{tab:app_model_map}
+\small
+\renewcommand{\arraystretch}{1.06}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.21\textwidth}>{\raggedright\arraybackslash}p{0.23\textwidth}>{\raggedright\arraybackslash}p{0.25\textwidth}L@{}}
+\toprule
+Model & Scaling & Input representation & Model structure \\
+\midrule
+Logistic classifier & Cumulative-return scale & Continuous sequence & Linear logit \\
+Logistic classifier & Devolatized-return scale & Continuous sequence & Linear logit \\
+Logistic classifier & Image scale & Continuous sequence & Linear logit \\
+CNN1D & Cumulative-return scale & Continuous sequence & Temporal convolution \\
+CNN1D & Devolatized-return scale & Continuous sequence & Temporal convolution \\
+CNN1D & Image scale & Continuous sequence & Temporal convolution \\
+Chart CNN & Image scale & Binary grayscale image & Two-dimensional convolution \\
+Multimodal model & Image scale & Chart and sequence & Paired branches with fusion \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
 \begin{table}[htbp]
 \centering
@@ -53,6 +113,25 @@ $I$ & Chart input & Chart CNN blocks and channels & Sequence input & CNN1D block
 \end{table}
 
 The scaling exercise also estimates a logistic classifier on the image-scaled, cumulative-return-scaled, and devolatized-return-scaled sequences. Scheme-specific sequence channels are standardized with moments estimated in the development sample and then held fixed during evaluation.
+
+For multimodal feature fusion, let $f^{2D}_{i,t}$ and $f^{1D}_{i,t}$ denote the chart and sequence feature vectors. The joint representation is
+\begin{equation}
+ f^{MM}_{i,t}=\left[f^{2D}_{i,t};f^{1D}_{i,t}\right].
+ \label{eq:app_fusion}
+\end{equation}
+The concatenated vector enters a linear classifier. Late-fusion specifications instead average the probabilities or logits from separately trained branches. For every learned model, the softmax probability assigned to the up class is
+\begin{equation}
+ s_{i,t}=\frac{\exp(z_{i,t}^{(1)})}
+ {\exp(z_{i,t}^{(0)})+\exp(z_{i,t}^{(1)})}.
+ \label{eq:app_score}
+\end{equation}
+This probability is the within-date portfolio ranking score.
+
+\FloatBarrier
+
+\subsection{Training, checkpoint, and ensemble conventions}\label{app:run_conventions}
+
+Table~\ref{tab:app_training} records the settings shared by the learned models. The main empirical analysis uses one selected checkpoint for every learned specification. The chart CNN seed sensitivity exercise separately compares one- and five-member forecast averages for the two short-input weekly specifications. Table~\ref{tab:app_run_conventions} keeps the main results and this sensitivity check distinct.
 
 \begin{table}[htbp]
 \centering
@@ -77,10 +156,6 @@ Portfolio score & Softmax probability assigned to the positive-return class \\
 \end{tabularx}
 \end{table}
 
-\subsection{Checkpoint and ensemble conventions}\label{app:run_conventions}
-
-The main empirical analysis uses one selected checkpoint for every learned specification. The chart CNN seed sensitivity exercise separately compares one- and five-member forecast averages for the two short-input weekly specifications. Table~\ref{tab:app_run_conventions} keeps the main results and this sensitivity check distinct.
-
 \begin{table}[htbp]
 \centering
 \caption{Run convention by result family}
@@ -99,6 +174,46 @@ Late fusion & Prediction-level combination & Pretrained chart and CNN1D probabil
 \bottomrule
 \end{tabularx}
 \end{table}
+
+\subsection{Benchmark and transaction-cost formulas}
+
+The article compares the learned rankings with four transparent price-based benchmarks. MOM is the cumulative return over the previous 252 trading days after excluding the most recent 21 trading days,
+\begin{equation}
+ z^{\mathrm{MOM}}_{i,t}=\prod_{j=22}^{273}(1+r_{i,t-j})-1.
+ \label{eq:app_mom}
+\end{equation}
+One-month short-term reversal (STR) and one-week short-term reversal (WSTR) use the negative of the previous 21- and 5-trading-day returns,
+\begin{equation}
+ z^{\mathrm{STR}}_{i,t}=-\left(\frac{P_{i,t}}{P_{i,t-21}}-1\right),
+ \qquad
+ z^{\mathrm{WSTR}}_{i,t}=-\left(\frac{P_{i,t}}{P_{i,t-5}}-1\right).
+ \label{eq:app_reversal}
+\end{equation}
+High values therefore identify recent losers. The price series is split-consistent with the return history.
+
+TREND combines moving-average information for
+\[
+ \mathcal{L}=\{3,5,10,20,50,100,200,400,600,800,1000\}.
+\]
+For each $L$, define $x_{i,t,L}=\mathrm{MA}_{i,t,L}/P_{i,t}$. A date-level cross-sectional regression maps these ratios into next-period returns, and the forecasting coefficients are the trailing mean of the previous 12 fully realized coefficient vectors. The score is
+\begin{equation}
+ z^{\mathrm{TREND}}_{i,t}=\sum_{L\in\mathcal{L}}\overline{\beta}_{L,t}x_{i,t,L}.
+ \label{eq:app_trend}
+\end{equation}
+
+For $\ell\in\{\mathrm{long},\mathrm{short}\}$, conventional half-turnover is
+\begin{equation}
+ \mathrm{Turnover}^{\ell}_{t}=\frac{1}{2}\sum_i
+ \left|w^{\ell,\mathrm{target}}_{i,t}-w^{\ell,\mathrm{prev}}_{i,t}\right|.
+ \label{eq:app_turnover}
+\end{equation}
+Reported turnover sums the two legs and converts the average to a monthly equivalent. Net performance deducts the one-way cost rate $c_{i,t}$ from full absolute traded notional in each leg,
+\begin{equation}
+ R^{\mathrm{net}}_{p,t}=R^{\mathrm{gross}}_{p,t}
+ -\sum_{i,\ell}c_{i,t}\left|\Delta w^{\ell}_{i,t}\right|.
+ \label{eq:app_netreturn}
+\end{equation}
+The rate is 10 basis points above the contemporaneous NYSE 80th-percentile market-capitalization breakpoint and 20 basis points otherwise.
 
 \FloatBarrier
 

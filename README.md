@@ -1,4 +1,4 @@
-# Local Scaling and Temporal Learning in Chart-Based Return Prediction
+# Revisiting Chart-Based Return Prediction: Shared Rankings and Economic Limits
 
 This repository contains the manuscript and submission files for a finance article targeted to the *Journal of Empirical Finance*.
 

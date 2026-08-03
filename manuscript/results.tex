@@ -1,14 +1,14 @@
-\section{What the chart CNN learns}\label{sec:mechanism_results}
+\section{Replicating and extending the representation comparison}\label{sec:mechanism_results}
 
-This section examines how local scaling and temporal learning contribute to the learned return ranking. We first compare logistic classifiers across the three sequence scaling schemes to measure how much predictive content is exposed by normalization. We then compare image-scaled CNN1D with the chart CNN under common input intervals and forecast horizons. Finally, the multimodal model tests whether the chart and sequence representations contain complementary predictive information.
+\Textcite{reimagining_price_trends_jiang} compare logistic classifiers and CNN1D across alternative scaling schemes and show that image-scaled CNN1D can match the portfolio performance of the chart CNN. We first assess whether this representation result persists through 2024. We then extend the portfolio-level comparison with direct tests of learned-model rank overlap, conditional predictive content, and multimodal complementarity.
 
-\subsection{Local scaling exposes the weekly signal}\label{subsec:scaling_results}
+\subsection{Replication: scaling and temporal sequence models}\label{subsec:scaling_results}\label{subsec:temporal_results}
 
-Table~\ref{tab:main_scaling} reports annualized gross Sharpe ratios for weekly high-minus-low portfolios over 2001--2024. Panel A compares the logistic classifier under the cumulative-return scale, devolatized-return scale, and image scale, showing how scaling affects the ranking before temporal learning is introduced. Panel B compares image-scaled CNN1D, the chart CNN, and the multimodal model across the three input intervals and both weighting schemes. Complete monthly and quarterly results appear in the online appendix.
+Table~\ref{tab:main_scaling} reports annualized gross Sharpe ratios for weekly high-minus-low portfolios over 2001--2024. Panel A reproduces the logistic comparison across cumulative-return, devolatized-return, and image scaling. Panel B reports image-scaled CNN1D and chart-CNN results alongside the multimodal extension. Complete monthly and quarterly results appear in the online appendix.
 
 \begin{table}[htbp]
 \centering
-\caption{Local scaling and model architecture in weekly return prediction}
+\caption{Replication and extension of the weekly representation comparison}
 \label{tab:main_scaling}
 \small
 \setlength{\tabcolsep}{5.5pt}
@@ -30,29 +30,27 @@ Multimodal & 6.01 & 1.16 & 6.48 & 1.52 & 5.53 & 1.75 \\
 \bottomrule
 \end{tabular}
 \begin{minipage}{\textwidth}
-\footnotesize\textit{Note.} The table reports annualized gross Sharpe ratios of non-overlapping 5-day high-minus-low decile portfolios from 2001 through 2024. EW and VW denote equal- and value-weighted legs. Image scale applies the chart's within-window min--max transformation to continuous sequence channels. Chart CNN receives the corresponding binary image. Multimodal is the feature-concatenation model. Each row uses that model's available score cross-section; the rows are not restricted to the exact three-model stock-date intersection used in the overlap tests. The online appendix reports the full scaling and return-horizon grids.
+\footnotesize\textit{Note.} The table reports annualized gross Sharpe ratios of non-overlapping 5-day high-minus-low decile portfolios from 2001 through 2024. Panel A and the CNN1D and chart-CNN rows in Panel B repeat the corresponding model comparisons in \textcite{reimagining_price_trends_jiang}, Table IX; the multimodal row is an extension. EW and VW denote equal- and value-weighted legs. Image scale is the specification label for local high--low scaling of the price and moving-average channels; volume is scaled separately. Chart CNN receives the corresponding binary image. Multimodal is the feature-concatenation model. Each row uses that model's available score cross-section; the rows are not restricted to the exact three-model stock-date intersection used in the overlap tests. The online appendix reports the full scaling and return-horizon grids.
 \end{minipage}
 \end{table}
 
-Panel A shows that local scaling exposes the first component of weekly predictability. In the representative $I20/R5$ specification, the logistic Sharpe ratio increases from $-0.41$ under the cumulative-return scale to 5.22 under the image scale, with the devolatized-return scale between them. The same ordering holds across the other input intervals. Local high--low normalization therefore exposes a strong return ranking before temporal learning is introduced. The next comparison measures the additional contribution of temporal convolution.
+Panel A confirms Jiang et al.'s scaling result in the extended sample. In the representative $I20/R5$ specification, the logistic Sharpe ratio increases from $-0.41$ under the cumulative-return scale to 5.22 under the image scale, with the devolatized-return scale between them. The same ordering holds across the other input intervals. Local high--low scaling therefore exposes a strong return ranking before temporal learning is introduced.
 
-Image scaling jointly normalizes open, high, low, close, and moving-average values within each lookback window, while volume is scaled separately. The transformation removes nominal price levels and preserves the relative positions of prices, ranges, and the moving average within recent market history. A given price movement occupies a larger share of the normalized range in a narrow-range window and a smaller share in a wide-range window. The image-scaled sequence retains this information as continuous channels without the pixel layout. Its logistic performance shows that chart-style normalization already provides an economically meaningful representation of recent price history.
+Local high--low scaling jointly normalizes open, high, low, close, and moving-average values within each lookback window, while volume is scaled separately. The transformation removes nominal price levels and preserves the relative positions of prices, ranges, and the moving average within recent market history. A given price movement occupies a larger share of the normalized range in a narrow-range window and a smaller share in a wide-range window. The locally scaled sequence retains this information as continuous channels without the pixel layout. Its logistic performance shows that this transformation already provides an economically meaningful representation of recent price history.
 
-\subsection{What temporal learning adds}\label{subsec:temporal_results}
+Panel B confirms the second part of the original representation result. Temporal convolution applied to the locally scaled sequence reproduces the chart CNN's weekly portfolio performance. In the representative $I20/R5$ specification, the Sharpe ratio increases from 5.22 for the image-scale logistic classifier to 6.55 for CNN1D, which is nearly identical to 6.52 for the chart CNN. CNN1D remains competitive across the other input intervals. Together, Panels A and B replicate the finding that local high--low scaling exposes the baseline ranking and that a temporal model can recover the chart CNN's weekly portfolio performance without the binary pixel layout.
 
-Panel B shows that temporal convolution applied to the image-scaled sequence reproduces the chart CNN's weekly portfolio performance. In the representative $I20/R5$ specification, the Sharpe ratio increases from 5.22 for the image-scaled logistic classifier to 6.55 for CNN1D, which is nearly identical to 6.52 for the chart CNN. CNN1D remains competitive across the other input intervals. Together, Panels A and B point to two components of performance. Local scaling exposes the baseline ranking, and temporal convolution strengthens it. The normalized numerical sequence is sufficient to reproduce the central chart CNN result.
-
-The longer-horizon grid shows an important boundary. Image scaling remains the strongest logistic representation, but temporal convolution adds little once the forecast horizon extends beyond one week. In $I20/R20$, the image-scaled logistic classifier reaches a Sharpe ratio of 2.37, compared with 2.15 for CNN1D, and the difference becomes more pronounced as the quarterly signal weakens. Local scaling therefore remains informative across horizons, while the additional contribution of temporal learning is concentrated at the weekly horizon.
+The replicated longer-horizon grid shows an important boundary. Local high--low scaling remains the strongest logistic representation, but temporal convolution adds little once the forecast horizon extends beyond one week. In $I20/R20$, the image-scale logistic classifier reaches a Sharpe ratio of 2.37, compared with 2.15 for CNN1D, and the difference becomes more pronounced as quarterly portfolio performance weakens. Local high--low scaling therefore remains informative across horizons, while the additional contribution of temporal learning is concentrated at the weekly horizon.
 
 Value weighting provides a second boundary on the weekly result. In $I20/R5$, Sharpe ratios near 6.5 for the three equal-weighted learned portfolios fall to between 1.12 and 1.52 under value weighting. The models remain close to one another, preserving the representation result, and the smaller economic magnitude indicates that much of the weekly spread comes from stocks receiving little weight in value-weighted portfolios. The later tradability screens examine this concentration directly.
 
-The representative $I20/R5$ decile profiles show that the weekly performance reflects a broad and similar ranking across the three learned models. Equal-weighted annualized returns rise from approximately $-32\%$ to $-35\%$ in the lowest-score decile to 53\% to 55\% in the highest, with generally increasing returns through the middle deciles. The especially steep increase from decile 9 to decile 10 shows additional concentration in the highest-ranked tail. Value-weighted profiles are flatter and receive little contribution from the lowest-score portfolio, reinforcing the smaller-stock boundary identified above.
+The representative $I20/R5$ decile profiles show that the weekly performance reflects a broad and similar ranking across the three learned models. Equal-weighted annualized returns rise from approximately $-35\%$ to $-32\%$ in the lowest-score decile to 53\% to 55\% in the highest, with generally increasing returns through the middle deciles. The especially steep increase from decile 9 to decile 10 shows additional concentration in the highest-ranked tail. Value-weighted profiles are flatter and receive little contribution from the lowest-score portfolio, reinforcing the smaller-stock boundary identified above.
 
-Table~\ref{tab:main_scaling} shows the portfolio-level result. Image-scaled CNN1D reproduces the chart CNN's central weekly performance using the continuous sequence representation. The models retain meaningful differences in input precision, filter geometry, and depth, which can affect their individual stock scores. The remaining question is whether their stock rankings are also similar. The score-overlap tests address this directly.
+The replicated portfolio results leave an unresolved question. CNN1D applied to the locally scaled sequence reproduces the chart CNN's weekly performance, but the models retain differences in input precision, filter geometry, and depth that can alter individual scores. Similar Sharpe ratios therefore need not imply that the models rank the same stocks. The first extension examines this distinction directly.
 
-\subsection{Do the models rank the same stocks?}\label{subsec:ranking_overlap}
+\subsection{Extension: representation overlap and conditional content}\label{subsec:ranking_overlap}
 
-The similar portfolio performance of the learned models raises the question of whether they rank the same stocks. Table~\ref{tab:score_correlations} reports average date-level Spearman rank correlations between model scores on the common stock-date panel. These correlations measure how similarly the models order stocks within each formation date and connect the portfolio results to overlap in the underlying ranking signals.
+Jiang et al.'s Table IX compares portfolio performance but does not report direct rank correlations between chart-CNN and CNN1D scores. Table~\ref{tab:score_correlations} reports average date-level Spearman correlations on the exact common stock-date panel. These statistics measure how similarly the models order stocks within each formation date and show what the replicated portfolio comparison conceals.
 
 \begin{table}[htbp]
 \centering
@@ -123,21 +121,21 @@ The regressions sharpen the overlap result. In $I5/R5$ and $I20/R5$, all three s
 
 \FloatBarrier
 
-\subsection{Can fusion improve the common signal?}\label{subsec:fusion_results}
+\subsection{Extension: complementarity across representations}\label{subsec:fusion_results}
 
-Fusion tests whether differences between the chart and sequence scores improve a single prediction. In the central $I20/R5$ specification, the multimodal model reaches a Sharpe ratio of 6.48, compared with 6.52 for the chart CNN and 6.55 for CNN1D. The best single branch also remains strongest in the other weekly specifications. The fusion result therefore points to limited complementarity between the two representations.
+The second extension tests complementarity directly by combining chart and sequence information. In the central $I20/R5$ specification, the multimodal model reaches a Sharpe ratio of 6.48, compared with 6.52 for the chart CNN and 6.55 for CNN1D. The best single branch also remains strongest in the other weekly specifications. The fusion result therefore points to limited complementarity between the two representations.
 
 The same pattern appears when the branches are combined after separate training. Late fusion averages the chart CNN and CNN1D probabilities or logits and produces weekly performance close to the individual branches. The agreement between feature concatenation and late fusion shows that limited gains persist across fusion designs. Detailed comparisons appear in the online appendix.
 
-Taken together, the multimodal results point to limited complementarity. Fusion preserves the strong weekly signal across feature-level and prediction-level designs, while the best individual branch retains the highest performance. Combined with the score correlations, this pattern indicates that the chart and sequence representations recover largely overlapping predictive information from the same recent price history. The joint regressions show that some conditional variation remains in the individual scores.
+Taken together, the multimodal results point to limited complementarity. Fusion preserves the strong weekly portfolio performance across feature-level and prediction-level designs, while the best individual branch retains the highest performance. Combined with the score correlations, this pattern indicates that the chart and sequence representations recover largely overlapping predictive information from the same recent price history. The joint regressions show that some conditional variation remains in the individual scores.
 
-\section{Economic performance and its limits}\label{sec:economic_limits}
+\section{Economic value: implementation and fragility}\label{sec:economic_limits}
 
-The representation results show that several learned models recover a strong short-horizon ranking from locally scaled recent price history. We next assess the economic scope of this ranking through transparent benchmark and implementation tests. The analysis compares the learned portfolios with price-based benchmarks, examines performance after transaction costs, locates where the returns reside in the cross section, and evaluates stability during the 2020--2024 extension sample.
+The learned models produce a strong weekly ranking in the unrestricted universe. Whether that ranking represents implementable economic value is less clear. We evaluate it in four steps: comparison with transparent price rules, deduction of a common trading-cost schedule, restriction to more tradable stocks, and performance in the 2020--2024 extension sample. The central distinction is between a strong unrestricted return-ranking result and a portfolio result that is sensitive to weighting, liquidity, and sample period.
 
-\subsection{Comparison with transparent price rules}\label{subsec:benchmark_results}
+\subsection{Gross performance and the cost hurdle}\label{subsec:benchmark_results}
 
-Table~\ref{tab:weekly_benchmarks} places the representative $I20/R5$ learned portfolios against MOM, STR, WSTR, and TREND over 2001--2024. Each method retains its own signal definition and lookback, and all signals enter the same weekly non-overlapping decile construction, equal-weighting rule, and transaction-cost adjustment. This common portfolio framework makes their economic performance comparable after signal construction.
+Table~\ref{tab:weekly_benchmarks} compares the representative $I20/R5$ learned portfolios with MOM, STR, WSTR, and TREND over 2001--2024. Each method retains its own score definition and lookback, but all enter the same weekly non-overlapping decile construction, equal-weighting rule, and transaction-cost adjustment. The rows are therefore comparable as portfolio strategies, although method-specific histories can change the eligible stock-date samples.
 
 \begin{table}[htbp]
 \centering
@@ -147,7 +145,7 @@ Table~\ref{tab:weekly_benchmarks} places the representative $I20/R5$ learned por
 \setlength{\tabcolsep}{6pt}
 \begin{tabular}{@{}lrrrrr@{}}
 \toprule
-Signal & Gross return & Gross SR & Net return & Net SR & Turnover \\
+Method & Gross return & Gross SR & Net return & Net SR & Turnover \\
 \midrule
 Chart CNN $I20/R5$ & 84.9\% & 6.52 & 51.3\% & 3.94 & 6.64 \\
 CNN1D $I20/R5$ & 89.1\% & 6.55 & 56.5\% & 4.16 & 6.46 \\
@@ -163,19 +161,13 @@ TREND & 52.7\% & 2.49 & 27.5\% & 1.31 & 4.95 \\
 \end{minipage}
 \end{table}
 
-The benchmark comparison sets a meaningful gross-performance hurdle. WSTR is the strongest benchmark with a Sharpe ratio of 2.86, and both TREND and STR also produce positive weekly spreads. The learned models reach Sharpe ratios near 6.5 under the same portfolio framework. Combined with the representation results, this shows that models built on local scaling and temporal learning deliver substantially stronger gross portfolio performance than the individual price rules.
+The learned portfolios clear the gross benchmark hurdle by a wide margin: their Sharpe ratios are near 6.5, compared with 2.86 for WSTR, the strongest transparent rule. Their turnover is also close to WSTR's. Under the common 10--20 basis-point schedule, trading reduces learned-model annualized returns by roughly 33 percentage points, but their larger gross spreads still leave net Sharpe ratios near four; TREND is the strongest net benchmark at 1.31.
 
-Trading intensity is similar for the learned portfolios and WSTR, with reported turnover between 6.46 and 6.71. The common transaction-cost schedule therefore reduces their annualized returns by approximately 33 to 35 percentage points. The larger learned gross spreads leave net Sharpe ratios near four, while TREND becomes the strongest net benchmark at 1.31. The learned net advantage reflects stronger gross rankings despite comparable turnover.
+This favorable comparison is conditional on equal weighting and a stylized cost schedule. Under value weighting, all three learned portfolios retain positive gross Sharpe ratios, but their net Sharpe ratios are negative in both the baseline and extension samples. The cost schedule also excludes market impact, borrowing costs, short-sale constraints, and capacity. The benchmark table therefore establishes a strong unrestricted ranking, not a claim of scalable profitability. Across the wider grid, the advantage also narrows at longer horizons and when larger stocks receive more weight.
 
-Value weighting provides a stricter implementation test. The $I20/R5$ learned portfolios retain positive gross Sharpe ratios, yet all three net annualized returns become negative, ranging from $-7.3\%$ to $-1.5\%$. The strong weekly net performance therefore depends on equal weighting. The tradability screens next show which stocks drive this dependence.
+\subsection{The tradability boundary}\label{subsec:tradability_results}
 
-The benchmark comparison shows that the learned portfolios produce stronger gross and net performance than the transparent price-based rules under a common portfolio framework. Each method retains its own lookback, so eligible samples can differ across rows. A direct signal-overlap test would require exact benchmark-by-model stock-date panels and is outside this comparison. The common transaction-cost schedule captures direct trading costs, while scalability also depends on market impact, borrowing costs, short-sale constraints, and capacity. The following tradability screens provide a partial test of these implementation limits.
-
-Across the full benchmark grid, the dominant pattern is concentration. Local scaling and temporal learning deliver their clearest advantage in weekly equal-weighted portfolios. Learned and transparent strategies converge as the forecast horizon lengthens and portfolio weights shift toward larger firms. The economic advantage is therefore concentrated in frequent sorting and portfolios that give smaller stocks more weight.
-
-\subsection{Where does the portfolio performance reside?}\label{subsec:tradability_results}
-
-Table~\ref{tab:tradability} examines whether the strong equal-weighted weekly results depend on stocks that are difficult to trade at scale. We re-form the representative $I20/R5$ portfolios after applying price, dollar-volume, and market-capitalization screens while keeping the model scores fixed. Applying each filter before sorting preserves the ranking rule within the eligible cross section.
+Table~\ref{tab:tradability} locates the unrestricted result within the cross section. We keep the $I20/R5$ scores fixed and re-form the portfolios after price, dollar-volume, and market-capitalization screens. Each filter is applied before sorting, so the exercise asks whether the ranking remains economically useful within a more tradable eligible universe.
 
 \begin{table}[htbp]
 \centering
@@ -214,17 +206,15 @@ Multimodal & Full universe & 54.5\% & 4.04 & 53.2\% & 12.10 & 419 & 6.56 \\
 \end{minipage}
 \end{table}
 
-The full-universe rows provide a common baseline for the tradability tests. All three learned models retain strong net performance under the common transaction-cost schedule, and turnover remains similar across them. With the model scores fixed, changes across the filtered rows show how restricting the eligible cross section affects economic performance.
+The result fails quickly as liquidity requirements tighten. A \$5 price screen leaves positive but much smaller net performance; a \$1 million dollar-volume screen makes all three portfolios negative. Excluding NYSE microcaps or combining the screens produces the same conclusion, while turnover remains high. For example, CNN1D moves from a 56.5\% net annualized return in the full universe to $-5.7\%$ at the \$1 million dollar-volume threshold and $-19.0\%$ under the combined screen.
 
-Table~\ref{tab:tradability} shows that liquidity defines the main economic boundary. Requiring a price of at least \$5 preserves positive, though much weaker, net performance, while a \$1 million dollar-volume screen makes all three portfolios negative. Excluding microcaps or combining the screens leads to the same conclusion, and turnover remains high throughout. The strong unrestricted performance is therefore concentrated among stocks that are difficult to trade at scale.
+Carhart adjustment does not explain the unrestricted spread: the full-universe annualized alphas remain close to the corresponding net returns. Yet both returns and alphas turn negative under modest dollar-volume and capitalization restrictions. Factor adjustment and implementability thus answer different questions. The ranking is not a conventional factor repackaging, but its measured economic value is concentrated in stocks for which the omitted costs and capacity constraints are likely most severe.
 
-Carhart adjustment leaves the full-universe result largely unchanged, indicating that conventional market, size, value, and momentum exposures explain little of the unrestricted spread. Performance turns negative under the dollar-volume and market-capitalization screens. Together, these findings show that conventional factor exposures explain little of the signal, while its economic performance is concentrated among stocks that are difficult to trade at scale.
+This location is also consistent with the established economics of weekly reversal, whose profits are largest among small and illiquid stocks \parencite{chenMaxingOutReversals2025}. The similarity is descriptive: without an exact common-panel score comparison, the evidence does not establish that the learned models reproduce the reversal signal.
 
-The tradability result places the learned signal in the same broad part of the cross section as weekly reversal. Prior evidence associates weekly reversal with temporary price pressure and finds its largest profits among small and illiquid stocks \parencite{chenMaxingOutReversals2025}. Our learned portfolios are strongest in that same market segment. This common economic location motivates a connection to short-horizon reversal, while direct signal overlap remains untested.
+\subsection{Recent-sample fragility}\label{subsec:sample_stability}
 
-\subsection{Does the signal persist after 2019?}\label{subsec:sample_stability}
-
-The extension sample tests whether the historical ranking persists in recent data with model parameters, benchmark definitions, and portfolio rules held fixed. Table~\ref{tab:period_results} compares the representative weekly learned models and price-based benchmarks between the 2001--2019 baseline sample and the 2020--2024 extension sample. The shorter extension period provides a recent stability test with greater sampling uncertainty.
+Table~\ref{tab:period_results} asks whether the historical ranking persists with model parameters, benchmark definitions, and portfolio rules held fixed. It compares the representative learned models and price rules in the 2001--2019 baseline and the 2020--2024 extension. Because the extension spans only five years, its estimates are less precise and should be read as a stability diagnostic.
 
 \begin{table}[htbp]
 \centering
@@ -236,7 +226,7 @@ The extension sample tests whether the historical ranking persists in recent dat
 \toprule
 & \multicolumn{4}{c}{2001--2019} & \multicolumn{4}{c}{2020--2024} \\
 \cmidrule(lr){2-5}\cmidrule(l){6-9}
-Signal & Gross ret. & Gross SR & Net ret. & Net SR & Gross ret. & Gross SR & Net ret. & Net SR \\
+Method & Gross ret. & Gross SR & Net ret. & Net SR & Gross ret. & Gross SR & Net ret. & Net SR \\
 \midrule
 Chart CNN $I20/R5$ & 96.3\% & 7.64 & 60.0\% & 4.78 & 50.7\% & 3.87 & 18.5\% & 1.35 \\
 CNN1D $I20/R5$ & 102.2\% & 8.09 & 66.5\% & 5.28 & 49.9\% & 3.34 & 18.6\% & 1.18 \\
@@ -248,26 +238,12 @@ TREND & 64.4\% & 3.09 & 38.3\% & 1.85 & 8.1\% & 0.38 & $-13.3$\% & $-0.62$ \\
 \bottomrule
 \end{tabular}
 \begin{minipage}{\textwidth}
-\footnotesize\textit{Note.} Returns and Sharpe ratios are annualized. The learned rows use the representative 20-day input. Benchmark rows use the signal definitions in Section~\ref{subsec:benchmarks}. Portfolio and cost conventions are fixed across periods.
+\footnotesize\textit{Note.} Returns and Sharpe ratios are annualized. The learned rows use the representative 20-day input. Benchmark definitions appear in Section~\ref{subsec:portfolios}. Portfolio and cost conventions are fixed across periods.
 \end{minipage}
 \end{table}
 
-The extension sample moves all three learned models into a common lower-performance range. Net Sharpe ratios fall from around five in the baseline sample to approximately 1.2 after 2019, while net annualized returns remain positive near 18\%. The parallel decline is consistent with the shared-signal interpretation and shows that its historical economic magnitude is substantially weaker in recent data.
+All three learned portfolios weaken sharply after 2019. Their net Sharpe ratios fall from roughly five in the baseline sample to 1.11--1.35 in the extension, although net annualized returns remain positive near 18\%. WSTR and TREND fall from net Sharpe ratios above 1.5 to zero or below, and STR also weakens. The decline therefore spans learned representations and transparent short-horizon price rules rather than isolating one architecture.
 
-The recent decline extends beyond the learned models. WSTR and TREND move from net Sharpe ratios above 1.5 in the baseline sample to zero or negative values after 2019, and STR also weakens. MOM remains economically small and moves in the opposite direction. The broader deterioration points to weaker short-horizon price-history predictability across methods. The short extension leaves market change, sampling variation, and specification search as competing explanations.
+The appendix shows that 2020 is the chart CNN's low point and that performance partially recovers during 2021--2024. The five-year average consequently combines a sharp initial break with uneven later performance. This pattern is consistent with the recent attenuation reported by \textcite{kaczmarekErodingNonScalableCNN2025} and with broader evidence of predictor decay \parencite{mcleanAcademicResearchDestroy2016}, but it does not distinguish market change from sampling variation or specification search.
 
-The positive equal-weighted extension returns have narrow implementation scope. The same strategies produce negative net returns under value weighting, and the full-sample screens locate the unrestricted performance among stocks that are difficult to trade at scale. Taken together, the evidence shows that a detectable ranking persists in recent data, with limited scalable economic value.
-
-The extension result aligns with the weaker recent chart CNN performance documented by \textcite{kaczmarekErodingNonScalableCNN2025} and with broader evidence that return predictors decay out of sample and after publication \parencite{mcleanAcademicResearchDestroy2016}. Our evidence broadens this boundary because the chart CNN, CNN1D, multimodal model, and short-horizon benchmarks weaken together. The attenuation therefore spans representations and transparent price-based strategies.
-
-The period averages conceal substantial annual variation. The annual chart CNN results in the online appendix show 2020 as the clear low point, followed by partial recovery during 2021--2024. The recent-data boundary is therefore substantial and uneven across the extension years.
-
-\subsection{Economic interpretation}\label{subsec:scope}
-
-The mechanism result is simple. Local high--low scaling exposes a strong weekly ranking, and temporal convolution strengthens it. The image-scaled sequence expresses prices, ranges, and the moving average relative to each stock's recent high--low range, with volume scaled separately. CNN1D reproduces the chart CNN's portfolio performance from this continuous representation, while score overlap and limited fusion gains indicate that the models recover largely shared information.
-
-The ranking is strongest over the next week and among small, illiquid stocks. This places the learned signal in the same broad economic segment as weekly reversal \parencite{chenMaxingOutReversals2025}. The connection concerns economic location, while direct score overlap remains untested.
-
-The factor and tradability tests give different readings of the same portfolios. Strong full-universe Carhart alphas show that conventional factors explain little of the ranking. Negative returns under modest dollar-volume screens show that this statistical predictability has limited scalable portfolio value. Market impact, borrowing constraints, and capacity are also likely to be most severe among the same stocks, so the liquidity evidence defines the practical economic boundary.
-
-We place the greatest weight on patterns that recur across model families, input windows, and economic tests. Local scaling and the additional weekly contribution of temporal learning meet this standard. Exact differences between the chart CNN and CNN1D are more sensitive to the use of one selected checkpoint per specification, differences in eligible samples, and selection from a larger model grid. Post-2019 magnitudes also come from a short extension sample. These considerations support a conservative interpretation of individual cells.
+Positive equal-weighted extension returns do not overturn the implementation evidence. The representative value-weighted net Sharpe ratios are negative, and the full-sample screens locate the unrestricted returns in difficult-to-trade stocks. The recent sample therefore preserves some return-ranking ability while weakening both its magnitude and its practical interpretation.
