@@ -69,6 +69,43 @@ the final thesis and flag any proposed departure for author review.
 Use `model`, `classifier`, `network`, `model architecture`, or the specific
 model name instead of using `learner` or `learners` as general technical labels.
 
+### Editorial writing rules
+
+Use the central representation terms at distinct levels:
+
+- `image scale` names the specific sequence-input specification that applies
+  the chart's within-window transformation to continuous numerical channels;
+- `local high--low scaling` names the underlying transformation itself; and
+- `local normalization` may summarize the economic idea, but should not replace
+  the two precise terms in model descriptions or reported comparisons.
+
+Keep the empirical objects distinct:
+
+- a `model score` is the predicted up-class probability;
+- a `ranking` is the within-date ordering induced by a model score;
+- `portfolio performance` is the return or Sharpe ratio obtained by sorting on
+  that ranking; and
+- `predictive information` is the broader interpretation supported jointly by
+  the score, ranking, regression, and portfolio evidence.
+
+Use `signal` for a named benchmark signal or for a deliberately broad economic
+interpretation. Do not use it as an automatic synonym for a model score,
+ranking, or portfolio return.
+
+Match claim strength to the reported evidence. Use `attains similar portfolio
+performance`, `recovers most of the portfolio performance`, `indicates`, or `is
+consistent with` when describing comparisons. Reserve `reproduces` for the
+reported portfolio pattern, not for identity of model scores or rankings. Avoid
+`identifies`, `isolates`, or causal statements unless the design directly
+supports them. Describe chart construction as combining scaling and the binary
+chart representation; flexible learning belongs to the broader prediction
+pipeline rather than to chart construction itself.
+
+Write result paragraphs claim first. State the substantive finding, cite the
+relevant table or figure, report the supporting quantities, and then give the
+interpretation or limitation. Avoid repeated openings such as `Table X shows`
+when the finding can serve as the subject of the sentence.
+
 The authoritative local PDF on Tobias's machine is:
 
 `/Users/tobiasedwardmailandtpoulsen/Desktop/Universitet/Speciale/Speciale - Beyond the Chart (FINAL) .pdf`
