@@ -44,7 +44,7 @@ Dimension & Jiang et al. (2023) & This study \\
 \midrule
 Development sample & 1993--2000; random 70\% training and 30\% validation split & 1993--2000; random 70\% training and 30\% validation split using a fixed seed \\
 Evaluation sample & 2001--2019 & 2001--2024, reported as a 2001--2019 baseline and a 2020--2024 extension \\
-Core model grid & Chart CNN, logistic classifier, and CNN1D; three scaling schemes and all nine $(I,R)$ cells & Same replication grid, plus multimodal feature fusion, late fusion, and direct learned-score comparisons \\
+Core model grid & Chart CNN, logistic classifier, and CNN1D; three scaling schemes and all nine $(I,R)$ cells & Same core grid, plus multimodal feature fusion, late fusion, and direct learned-score comparisons \\
 Chart-CNN forecast aggregation & Five independent fits per configuration with forecasts averaged & One selected checkpoint in the main analysis; matched one- and five-member sensitivity checks for $I5/R5$ and $I20/R5$ \\
 Optimizer and learning rate & Adam with initial learning rate $10^{-5}$ & Adam with learning rate $10^{-4}$ \\
 Portfolio construction & Non-overlapping high-minus-low decile portfolios; equal and value weighting; 5-, 20-, and 60-day horizons & Same core portfolio construction, with exact common stock-date panels imposed for learned-score overlap tests \\

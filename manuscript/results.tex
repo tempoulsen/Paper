@@ -1,14 +1,14 @@
-\section{Replicating and extending the representation comparison}\label{sec:mechanism_results}
+\section{Re-estimating and extending the representation comparison}\label{sec:mechanism_results}
 
 \Textcite{reimagining_price_trends_jiang} compare logistic classifiers and CNN1D across alternative scaling schemes and show that image-scaled CNN1D can match the portfolio performance of the chart CNN. We first assess whether this representation result persists through 2024. We then extend the portfolio-level comparison with direct tests of learned-model rank overlap, conditional predictive content, and multimodal complementarity.
 
-\subsection{Replication: scaling and temporal sequence models}\label{subsec:scaling_results}\label{subsec:temporal_results}
+\subsection{Extended-sample scaling and temporal sequence models}\label{subsec:scaling_results}\label{subsec:temporal_results}
 
-Table~\ref{tab:main_scaling} reports annualized gross Sharpe ratios for weekly high-minus-low portfolios over 2001--2024. Panel A reproduces the logistic comparison across cumulative-return, devolatized-return, and image scaling. Panel B reports image-scaled CNN1D and chart-CNN results alongside the multimodal extension. Complete monthly and quarterly results appear in the online appendix.
+Table~\ref{tab:main_scaling} re-estimates Jiang et al.'s specifications over the extended 2001--2024 evaluation sample. Panel A compares the logistic classifier across cumulative-return, devolatized-return, and image scaling. Panel B reports image-scaled CNN1D and chart-CNN results alongside the multimodal extension. Complete monthly and quarterly results appear in the online appendix.
 
 \begin{table}[htbp]
 \centering
-\caption{Replication and extension of the weekly representation comparison}
+\caption{Extended-sample re-estimation of the weekly representation comparison}
 \label{tab:main_scaling}
 \small
 \setlength{\tabcolsep}{5.5pt}
@@ -30,27 +30,25 @@ Multimodal & 6.01 & 1.16 & 6.48 & 1.52 & 5.53 & 1.75 \\
 \bottomrule
 \end{tabular}
 \begin{minipage}{\textwidth}
-\footnotesize\textit{Note.} The table reports annualized gross Sharpe ratios of non-overlapping 5-day high-minus-low decile portfolios from 2001 through 2024. Panel A and the CNN1D and chart-CNN rows in Panel B repeat the corresponding model comparisons in \textcite{reimagining_price_trends_jiang}, Table IX; the multimodal row is an extension. EW and VW denote equal- and value-weighted legs. Image scale is the specification label for local high--low scaling of the price and moving-average channels; volume is scaled separately. Chart CNN receives the corresponding binary image. Multimodal is the feature-concatenation model. Each row uses that model's available score cross-section; the rows are not restricted to the exact three-model stock-date intersection used in the overlap tests. The online appendix reports the full scaling and return-horizon grids.
+\footnotesize\textit{Note.} The table reports annualized gross Sharpe ratios of non-overlapping 5-day high-minus-low decile portfolios from 2001 through 2024. Panel A and the CNN1D and chart-CNN rows in Panel B re-estimate the corresponding specifications in \textcite{reimagining_price_trends_jiang}, Table IX, over the extended evaluation sample; the multimodal row is an extension. EW and VW denote equal- and value-weighted legs. Image scale is the specification label for local high--low scaling of the price and moving-average channels; volume is scaled separately. Chart CNN receives the corresponding binary image. Multimodal is the feature-concatenation model. Each row uses that model's available score cross-section; the rows are not restricted to the exact three-model stock-date intersection used in the overlap tests. The online appendix reports the full scaling and return-horizon grids.
 \end{minipage}
 \end{table}
 
-Panel A confirms Jiang et al.'s scaling result in the extended sample. In the representative $I20/R5$ specification, the logistic Sharpe ratio increases from $-0.41$ under the cumulative-return scale to 5.22 under the image scale, with the devolatized-return scale between them. The same ordering holds across the other input intervals. Local high--low scaling therefore exposes a strong return ranking before temporal learning is introduced.
+In the representative $I20/R5$ specification, the logistic Sharpe ratio increases from $-0.41$ under the cumulative-return scale to 5.22 under the image scale, with the devolatized-return scale between them. The same ordering holds across the other input intervals. By preserving the relative position of prices within each recent high--low range, local high--low scaling makes a strong return ranking accessible even to a linear classifier.
 
-Local high--low scaling jointly normalizes open, high, low, close, and moving-average values within each lookback window, while volume is scaled separately. The transformation removes nominal price levels and preserves the relative positions of prices, ranges, and the moving average within recent market history. A given price movement occupies a larger share of the normalized range in a narrow-range window and a smaller share in a wide-range window. The locally scaled sequence retains this information as continuous channels without the pixel layout. Its logistic performance shows that this transformation already provides an economically meaningful representation of recent price history.
+Temporal convolution applied to the locally scaled sequence closely matches the chart CNN's weekly portfolio performance. In the representative $I20/R5$ specification, the Sharpe ratio increases from 5.22 for the image-scale logistic classifier to 6.55 for CNN1D, which is nearly identical to 6.52 for the chart CNN. CNN1D remains competitive across the other input intervals. Thus, temporal learning can recover the chart CNN's weekly portfolio performance without the binary pixel layout.
 
-Panel B confirms the second part of the original representation result. Temporal convolution applied to the locally scaled sequence reproduces the chart CNN's weekly portfolio performance. In the representative $I20/R5$ specification, the Sharpe ratio increases from 5.22 for the image-scale logistic classifier to 6.55 for CNN1D, which is nearly identical to 6.52 for the chart CNN. CNN1D remains competitive across the other input intervals. Together, Panels A and B replicate the finding that local high--low scaling exposes the baseline ranking and that a temporal model can recover the chart CNN's weekly portfolio performance without the binary pixel layout.
-
-The replicated longer-horizon grid shows an important boundary. Local high--low scaling remains the strongest logistic representation, but temporal convolution adds little once the forecast horizon extends beyond one week. In $I20/R20$, the image-scale logistic classifier reaches a Sharpe ratio of 2.37, compared with 2.15 for CNN1D, and the difference becomes more pronounced as quarterly portfolio performance weakens. Local high--low scaling therefore remains informative across horizons, while the additional contribution of temporal learning is concentrated at the weekly horizon.
+The longer-horizon grid shows an important boundary. Local high--low scaling remains the strongest logistic representation, but temporal convolution adds little once the forecast horizon extends beyond one week. In $I20/R20$, the image-scale logistic classifier reaches a Sharpe ratio of 2.37, compared with 2.15 for CNN1D, and the difference becomes more pronounced as quarterly portfolio performance weakens. Local high--low scaling therefore remains informative across horizons, while the additional contribution of temporal learning is concentrated at the weekly horizon.
 
 Value weighting provides a second boundary on the weekly result. In $I20/R5$, Sharpe ratios near 6.5 for the three equal-weighted learned portfolios fall to between 1.12 and 1.52 under value weighting. The models remain close to one another, preserving the representation result, and the smaller economic magnitude indicates that much of the weekly spread comes from stocks receiving little weight in value-weighted portfolios. The later tradability screens examine this concentration directly.
 
-The representative $I20/R5$ decile profiles show that the weekly performance reflects a broad and similar ranking across the three learned models. Equal-weighted annualized returns rise from approximately $-35\%$ to $-32\%$ in the lowest-score decile to 53\% to 55\% in the highest, with generally increasing returns through the middle deciles. The especially steep increase from decile 9 to decile 10 shows additional concentration in the highest-ranked tail. Value-weighted profiles are flatter and receive little contribution from the lowest-score portfolio, reinforcing the smaller-stock boundary identified above.
+The representative $I20/R5$ decile profiles show that the weekly performance reflects a broad and similar ranking across the three learned models. Equal-weighted annualized returns range from approximately $-35\%$ to $-32\%$ in the lowest decile and from 53\% to 55\% in the highest, with generally increasing returns through the middle deciles. The especially steep increase from decile 9 to decile 10 shows additional concentration in the highest-ranked tail. Value-weighted profiles are flatter and receive little contribution from the lowest-score portfolio, reinforcing the smaller-stock boundary identified above.
 
-The replicated portfolio results leave an unresolved question. CNN1D applied to the locally scaled sequence reproduces the chart CNN's weekly performance, but the models retain differences in input precision, filter geometry, and depth that can alter individual scores. Similar Sharpe ratios therefore need not imply that the models rank the same stocks. The first extension examines this distinction directly.
+The extended-sample portfolio results leave an unresolved question. CNN1D applied to the locally scaled sequence reproduces the chart CNN's weekly performance, but the models retain differences in input precision, filter geometry, and depth that can alter individual scores. Similar Sharpe ratios therefore need not imply that the models rank the same stocks. The first extension examines this distinction directly.
 
 \subsection{Extension: representation overlap and conditional content}\label{subsec:ranking_overlap}
 
-Jiang et al.'s Table IX compares portfolio performance but does not report direct rank correlations between chart-CNN and CNN1D scores. Table~\ref{tab:score_correlations} reports average date-level Spearman correlations on the exact common stock-date panel. These statistics measure how similarly the models order stocks within each formation date and show what the replicated portfolio comparison conceals.
+Jiang et al.'s Table IX compares portfolio performance but does not report direct rank correlations between chart-CNN and CNN1D scores. Table~\ref{tab:score_correlations} reports average date-level Spearman correlations on the exact common stock-date panel. These statistics measure how similarly the models order stocks within each formation date and show what the portfolio comparison conceals.
 
 \begin{table}[htbp]
 \centering
@@ -93,7 +91,7 @@ The rank correlations describe how similarly the models order stocks. Table~\ref
 
 \begin{table}[htbp]
 \centering
-\caption{Joint encompassing regressions for learned-model scores}
+\caption{T-statistics from joint encompassing regressions}
 \label{tab:joint_fmb}
 \small
 \setlength{\tabcolsep}{8pt}
@@ -123,11 +121,9 @@ The regressions sharpen the overlap result. In $I5/R5$ and $I20/R5$, all three s
 
 \subsection{Extension: complementarity across representations}\label{subsec:fusion_results}
 
-The second extension tests complementarity directly by combining chart and sequence information. In the central $I20/R5$ specification, the multimodal model reaches a Sharpe ratio of 6.48, compared with 6.52 for the chart CNN and 6.55 for CNN1D. The best single branch also remains strongest in the other weekly specifications. The fusion result therefore points to limited complementarity between the two representations.
+The second extension tests complementarity directly by combining chart and sequence information. In the central $I20/R5$ specification, the multimodal model reaches a Sharpe ratio of 6.48, compared with 6.52 for the chart CNN and 6.55 for CNN1D, and the best single branch remains strongest in the other weekly specifications. The same pattern appears after separate training: late fusion of the chart CNN and CNN1D probabilities or logits produces weekly performance close to the individual branches. Detailed comparisons appear in the online appendix.
 
-The same pattern appears when the branches are combined after separate training. Late fusion averages the chart CNN and CNN1D probabilities or logits and produces weekly performance close to the individual branches. The agreement between feature concatenation and late fusion shows that limited gains persist across fusion designs. Detailed comparisons appear in the online appendix.
-
-Taken together, the multimodal results point to limited complementarity. Fusion preserves the strong weekly portfolio performance across feature-level and prediction-level designs, while the best individual branch retains the highest performance. Combined with the score correlations, this pattern indicates that the chart and sequence representations recover largely overlapping predictive information from the same recent price history. The joint regressions show that some conditional variation remains in the individual scores.
+Across feature-level and prediction-level designs, fusion preserves strong weekly portfolio performance but does not improve on the best individual branch. Combined with the score correlations and joint regressions, the evidence points to substantial but incomplete overlap and limited complementarity between the chart and sequence representations.
 
 \section{Economic value: implementation and fragility}\label{sec:economic_limits}
 
