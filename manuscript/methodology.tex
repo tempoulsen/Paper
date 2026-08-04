@@ -23,6 +23,7 @@ The chart input combines local high--low scaling with a binary grayscale represe
  =\frac{x_{i,t-j}-m_{i,t}^{(I)}}{M_{i,t}^{(I)}-m_{i,t}^{(I)}}.
  \label{eq:image_scale}
 \end{equation}
+This transformation removes the nominal price level and normalizes the magnitude of the window's price range while preserving each observation's relative position and the path through that range.
 Trading volume is scaled separately within the same window. Chart construction then places daily OHLC bars and a moving-average line in the price panel and volume in a lower panel. The 5-, 20-, and 60-day images contain $32\times15$, $64\times60$, and $96\times180$ binary pixels, respectively. The online appendix provides an input illustration and the complete representation map.
 
 The numerical sequence contains the same six daily channels in chronological order: open, high, low, close, moving average, and volume. We evaluate three sequence specifications. The image scale retains the continuous within-window values from Eq.~\eqref{eq:image_scale}; the cumulative-return scale anchors each price channel to the first close; and the devolatized-return scale expresses price changes relative to lagged exponentially weighted volatility and volume through relative changes. Each transformed channel is standardized using development-sample moments that remain fixed during evaluation.

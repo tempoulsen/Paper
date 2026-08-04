@@ -83,7 +83,7 @@ Multimodal & 0.56 & 0.44 & 0.59 \\
 \end{minipage}
 \end{table}
 
-Rank overlap is strongest in the weekly specifications where portfolio performance is strongest. For $I5/R5$ and $I20/R5$, pairwise Spearman correlations range from 0.67 to 0.84. The similar weekly portfolio results are therefore accompanied by substantial overlap in the underlying stock rankings.
+Rank overlap is strongest in the weekly specifications where portfolio performance is strongest. For $I5/R5$ and $I20/R5$, pairwise Spearman correlations range from 0.67 to 0.84. The similar weekly portfolio results are therefore accompanied by substantial overlap in the underlying stock rankings. The correlations summarize the full cross-section, whereas the long--short portfolio uses only the highest and lowest deciles. Models can consequently produce similar Sharpe ratios if they form similar tail portfolios even while ordering many middle-ranked stocks differently.
 
 The models diverge most clearly with the 60-day input. In $I60/R5$, the chart CNN/CNN1D rank correlation falls to 0.44 as their Sharpe ratios separate to 3.72 and 5.89. CNN1D also preserves its weekly ranking more consistently across input windows than the chart CNN. The representation difference is therefore more visible with the longer lookback window than with the 5- and 20-day inputs.
 
@@ -202,6 +202,8 @@ Multimodal & Full universe & 54.5\% & 4.04 & 53.2\% & 12.10 & 419 & 6.56 \\
 \end{minipage}
 \end{table}
 
+\FloatBarrier
+
 Net performance falls quickly as liquidity requirements tighten. A \$5 price screen leaves positive but much smaller returns, while a \$1 million dollar-volume screen makes all three portfolios negative. Excluding NYSE microcaps or combining the screens also produces negative returns, and turnover remains high. CNN1D, for example, moves from a 56.5\% net annualized return in the full universe to $-5.7\%$ at the \$1 million dollar-volume threshold and $-19.0\%$ under the combined screen.
 
 \Textcite{reimagining_price_trends_jiang} report positive results among the largest 500 stocks, whereas our portfolios become negative under alternative tradability criteria. The exercises are not directly equivalent: Jiang et al. rank stocks within a largest-500 universe, while our filters use price, dollar-volume, and NYSE market-capitalization cutoffs; the evaluation period and model-estimation conventions also differ. Online Appendix Table A.2 lists these design differences. Our screens therefore qualify, rather than directly overturn, their implementation conclusion.
@@ -239,6 +241,8 @@ TREND & 64.4\% & 3.09 & 38.3\% & 1.85 & 8.1\% & 0.38 & $-13.3$\% & $-0.62$ \\
 \footnotesize\textit{Note.} Returns and Sharpe ratios are annualized. The learned rows use the representative 20-day input. Benchmark definitions appear in Section~\ref{subsec:portfolios}. Portfolio and cost conventions are fixed across periods.
 \end{minipage}
 \end{table}
+
+\FloatBarrier
 
 All three learned portfolios weaken sharply after 2019. Their net Sharpe ratios fall from roughly five in the baseline sample to 1.11--1.35 in the extension, although net annualized returns remain positive near 18\%. WSTR and TREND fall from net Sharpe ratios above 1.5 to zero or below, and STR also weakens. The post-2019 decline is therefore not unique to one architecture; it also appears in transparent short-horizon price rules.
 

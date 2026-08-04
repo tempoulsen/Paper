@@ -1,8 +1,8 @@
-# Revisiting Chart-Based Return Prediction: Ranking Overlap and Economic Limits
+# What Drives Chart-Based Return Prediction? Local Scaling, Temporal Learning, and Economic Limits
 
 This repository contains the manuscript and submission files for a finance article targeted to the *Journal of Empirical Finance*.
 
-The paper studies which parts of chart construction account for chart CNN return predictability. Its central result is that local high--low scaling makes a strong short-horizon ranking accessible and that temporal convolution applied to the same locally scaled numerical sequence reproduces the chart model's portfolio performance. Chart-CNN performance therefore comes primarily from a locally normalized temporal signal rather than the binary chart layout. Its measured economic value is concentrated in difficult-to-trade stocks and weakens after 2019.
+The paper studies which parts of chart construction account for chart CNN return predictability. Its central result is that local high--low scaling makes a strong short-horizon ranking accessible and that temporal convolution applied to the same locally scaled numerical sequence reproduces the chart model's portfolio performance. Most of the chart CNN's weekly portfolio performance can therefore be recovered from a locally normalized temporal sequence without the binary chart layout. Its measured economic value is concentrated in difficult-to-trade stocks and weakens after 2019.
 
 ## Editorial direction from Jesper
 
