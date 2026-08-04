@@ -17,7 +17,7 @@ To remove mechanical price jumps from stock splits, we set the first close in ea
 
 \subsection{Input construction and representations}\label{subsec:representation_design}
 
-The chart input combines local high--low scaling with a binary grayscale representation. We call this transformation \emph{local high--low scaling}; tables retain Jiang et al.'s label, \emph{image scale}. For each stock and formation date, let $m_{i,t}^{(I)}$ and $M_{i,t}^{(I)}$ denote the minimum and maximum calculated jointly across all open, high, low, close, and moving-average observations in the lookback window. Each price-channel observation is transformed as
+The chart input combines local high--low scaling with a binary grayscale representation. We refer to the underlying within-window transformation as \emph{local high--low scaling}; tables retain Jiang et al.'s label, \emph{image scale}, for the corresponding continuous sequence input. For each stock and formation date, let $m_{i,t}^{(I)}$ and $M_{i,t}^{(I)}$ denote the minimum and maximum calculated jointly across all open, high, low, close, and moving-average observations in the lookback window. Each price-channel observation is transformed as
 \begin{equation}
  \widetilde{x}_{i,t-j}
  =\frac{x_{i,t-j}-m_{i,t}^{(I)}}{M_{i,t}^{(I)}-m_{i,t}^{(I)}}.
