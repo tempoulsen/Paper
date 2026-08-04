@@ -1,8 +1,8 @@
-# Revisiting Chart-Based Return Prediction: Shared Rankings and Economic Limits
+# Revisiting Chart-Based Return Prediction: Ranking Overlap and Economic Limits
 
 This repository contains the manuscript and submission files for a finance article targeted to the *Journal of Empirical Finance*.
 
-The paper studies which parts of chart construction account for chart CNN return predictability. Its central result is that local high--low scaling exposes a strong short-horizon ranking and that temporal convolution applied to the same locally scaled numerical sequence reproduces the chart model's portfolio performance. The chart primarily delivers a locally normalized temporal signal. Benchmark strategies, transaction cost, weighting schemes, tradability screens, and the post-2019 sample define the signal's economic scope.
+The paper studies which parts of chart construction account for chart CNN return predictability. Its central result is that local high--low scaling makes a strong short-horizon ranking accessible and that temporal convolution applied to the same locally scaled numerical sequence reproduces the chart model's portfolio performance. Chart-CNN performance therefore comes primarily from a locally normalized temporal signal rather than the binary chart layout. Its measured economic value is concentrated in difficult-to-trade stocks and weakens after 2019.
 
 ## Editorial direction from Jesper
 
